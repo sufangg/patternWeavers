@@ -137,4 +137,25 @@ elif page == "Time Series":
 
 elif page == "Association Rules":
     st.title("Association Rules Dashboard")
-    st.info("placeholder")
+
+    # --- Summary Metrics ---
+    st.subheader("Association Rule Summary")
+    summary = pd.read_json("association_summary.json", typ="series")
+    st.json(summary)
+
+    # --- Full Association Rules Table ---
+    st.subheader("All Association Rules")
+    rules_df = pd.read_csv("final_association_rules.csv")
+    st.dataframe(rules_df, use_container_width=True)
+
+    # --- Top Association Rules ---
+    st.subheader("Top Association Rules (by Lift)")
+    top_rules = pd.read_csv("top_association_rules.csv")
+    st.bar_chart(
+        top_rules.set_index("rule")["lift"]
+    )
+
+    # --- Association Visualization ---
+    st.subheader("Association Strength Visualization")
+    st.image("Association_visuals.png", caption="Association Rules Network / Strength Visualization", use_container_width=True)
+
