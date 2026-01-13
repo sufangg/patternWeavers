@@ -101,7 +101,7 @@ elif page == "Regression":
     # Actual vs Predicted
     st.subheader("Actual vs Predicted")
     df = load_reg_data()
-    st.line_chart(df.set_index(df.columns[0])[['actual', 'predicted']])
+    st.line_chart(df.set_index(df.columns[0])[['Actual_Weekly_Sales', 'Predicted_Weekly_Sales']])
 
     # Model Coefficients
     st.subheader("Model Coefficients")
