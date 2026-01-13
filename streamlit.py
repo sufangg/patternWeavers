@@ -67,7 +67,7 @@ def get_top_rules(df):
 # =====================
 # SIDEBAR & NAVIGATION
 # =====================
-st.sidebar.title("Walmart Analytics")
+st.sidebar.title("Walmart Retail Analytics")
 page = st.sidebar.radio("Navigate", ["Home", "Classification", "Regression", "Time Series", "Association Rules"])
 
 # =====================
@@ -75,14 +75,31 @@ page = st.sidebar.radio("Navigate", ["Home", "Classification", "Regression", "Ti
 # =====================
 
 if page == "Home":
-    st.title("Walmart Smart AI Dashboard")
+    st.title("Walmart Retail Dashboard")
+    
     st.markdown("""
-    **Available Pipelines:**
-    - Classification:  confusion matrix + top 10 features
-    - Regression: actual vs predicted + coefficients + top 10 features
-    - Time Series: forecast + top 10 features
-    - Association Rules: top 10 rules + lift vs confidence 
+    Welcome to the **Walmart Retail Analytics Dashboard**, where you can explore insights from multiple data mining task.  
+
+    **1. Classification**  
+    - View prediction results per store/month  
+    - Analyze model performance via a confusion matrix  
+    - Examine the top 10 influential features  
+
+    **2. Regression**  
+    - Compare actual vs predicted weekly sales  
+    - Check top 10 most important features  
+
+    **3. Time Series**  
+    - Forecast sales vs actual trends  
+    - Review top 10 drivers/components affecting predictions  
+
+    **4. Association Rules**  
+    - Explore top 10 association rules ranked by lift  
+    - Visualize rule strength and lift vs confidence relationships  
+
+    Navigate using the sidebar to dive into each data mining task.
     """)
+
 
 elif page == "Classification":
     st.title("Classification Dashboard")
