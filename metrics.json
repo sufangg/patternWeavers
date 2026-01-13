@@ -1,0 +1,30 @@
+{
+  "generated_at": "2026-01-11 11:07:35",
+  "mode": "FUTURE_DATE",
+  "dataset_path": "/content/1.Final_Fused_Dataset.csv",
+  "target_col": "Weekly_Sales",
+  "date_col": "Date",
+  "train_end_year": 2011,
+  "test_year": 2012,
+  "model": "DecisionTreeRegressor",
+  "dt_params": {
+    "random_state": 42,
+    "max_depth": 20,
+    "min_samples_split": 2,
+    "min_samples_leaf": 4
+  },
+  "hyperparameter_tuning": null,
+  "future_test_metrics_2012": {
+    "RMSE": 5911.826628988322,
+    "MAE": 2887.9445356896176,
+    "R2": 0.9407521199015989
+  },
+  "timeseries_cv_summary_train_only": {
+    "CV_RMSE_mean": 8420.410696979869,
+    "CV_RMSE_std": 3748.203687082119,
+    "CV_MAE_mean": 3339.233812918709,
+    "CV_MAE_std": 840.761078584979,
+    "CV_R2_mean": 0.8821948261569901,
+    "CV_R2_std": 0.08504313807851889
+  }
+}

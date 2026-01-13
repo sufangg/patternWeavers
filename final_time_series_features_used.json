@@ -1,0 +1,10 @@
+{
+  "features_used": [
+    "Store",
+    "Year",
+    "Month",
+    "Lag_1",
+    "Lag_12",
+    "Rolling_Mean_3"
+  ]
+}
