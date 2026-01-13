@@ -1,0 +1,13 @@
+{
+  "dataset": "AR_Time (D6)",
+  "algorithm": "Apriori",
+  "encoding": "One-Hot (Reduced: Dept + Month)",
+  "min_support": 0.03,
+  "min_confidence": 0.3,
+  "rule_count": 6549,
+  "avg_confidence": 0.9346023409886901,
+  "avg_lift": 1.0480905591431542,
+  "time_apriori_s": 0.04856705665588379,
+  "time_rules_s": null,
+  "time_total_s": 0.04856705665588379
+}
