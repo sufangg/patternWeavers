@@ -94,27 +94,34 @@ elif page == "Classification":
     st.title("Classification Dashboard")
     df = load_class_data()
 
-    # Predicted class distribution (bar chart)
-    st.subheader("Predicted Class Distribution")
-    fig = px.histogram(
-        df,
-        x="predicted_class",
-        color="predicted_class",
-        title="Predicted Class Counts",
-        labels={"predicted_class":"Predicted Class"},
-        color_discrete_sequence=px.colors.qualitative.Set2
-    )
-    fig.update_layout(
-        xaxis_title="Predicted Class",
-        yaxis_title="Number of Instances",
-        showlegend=False
-    )
-    st.plotly_chart(fig, use_container_width=True)
+    # Toggle between table and charts
+    view_option = st.radio("Select view:", ["Table", "Charts"])
 
-    # Confusion matrix (heatmap)
-    st.subheader("Confusion Matrix")
-    cm_fig = plot_confusion_matrix(df, true_col='actual_class', pred_col='predicted_class')
-    st.pyplot(cm_fig)
+    if view_option == "Table":
+        st.subheader("Prediction Table")
+        st.dataframe(df, use_container_width=True)
+    else:
+        # Predicted class distribution (bar chart)
+        st.subheader("Predicted Class Distribution")
+        fig = px.histogram(
+            df,
+            x="predicted_class",
+            color="predicted_class",
+            title="Predicted Class Counts",
+            labels={"predicted_class":"Predicted Class"},
+            color_discrete_sequence=px.colors.qualitative.Set2
+        )
+        fig.update_layout(
+            xaxis_title="Predicted Class",
+            yaxis_title="Number of Instances",
+            showlegend=False
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+        # Confusion matrix (heatmap)
+        st.subheader("Confusion Matrix")
+        cm_fig = plot_confusion_matrix(df, true_col='actual_class', pred_col='predicted_class')
+        st.pyplot(cm_fig)
 
     # Top 10 feature importance (bar chart)
     st.subheader("Top 10 Feature Importance")
@@ -149,4 +156,4 @@ elif page == "Time Series":
 
 elif page == "Association Rules":
     st.title("Association Rules Dashboard")
-    st.info("placeholder")
+    st.info("placeholder - awaiting Person A data")
