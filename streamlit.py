@@ -11,18 +11,18 @@ from sklearn.metrics import confusion_matrix
 st.set_page_config(page_title="Walmart Retail Dashboard", layout="wide")
 
 # =====================
-# MODULAR FUNCTIONS (PERSON B REQUIREMENTS)
+# MODULAR FUNCTIONS 
 # =====================
 
-# --- Shared / UI ---
+# --- UI ---
 def export_importance(df, filename):
     df.to_csv(filename, index=False)
 
-# --- 🟩 CLASSIFICATION ---
+# --- CLASSIFICATION ---
 def load_class_data():
     return pd.read_csv("final_classification_predictions.csv")
 
-def load_model(): # Loads trained model only
+def load_model(): 
     return joblib.load("final_classification_model.pkl")
 
 def get_class_importance():
@@ -31,11 +31,11 @@ def get_class_importance():
     export_importance(top_10, "final_classification_feature_importance.csv")
     return top_10
 
-# --- 🟦 REGRESSION ---
+# --- REGRESSION ---
 def load_reg_data():
     return pd.read_csv("sample_predictions.csv")
 
-def train_model(): # INSTRUCTION: Loads trained model only
+def train_model(): 
     return joblib.load("final_regression_pipeline.pkl")
 
 def get_reg_importance():
@@ -44,7 +44,7 @@ def get_reg_importance():
     export_importance(top_10, "final_feature_importance.csv")
     return top_10
 
-# --- 🟪 TIME SERIES ---
+# --- TIME SERIES ---
 def load_ts_data():
     df = pd.read_csv("final_time_series_forecast.csv")
     df['timestamp'] = pd.to_datetime(df['timestamp'])
@@ -56,7 +56,7 @@ def get_components():
     export_importance(top_10, "final_time_series_components.csv")
     return top_10
 
-# --- 🟨 ASSOCIATION ---
+# --- ASSOCIATION ---
 def load_rules():
     return pd.read_csv("top_association_rules.csv")
 
@@ -75,56 +75,53 @@ page = st.sidebar.radio("Navigate", ["Home", "Classification", "Regression", "Ti
 # =====================
 
 if page == "Home":
-    st.title("🏪 Walmart Smart AI Dashboard")
-    st.info("Person B: Interpretation & UI focus. No retraining of models.")
+    st.title("Walmart Smart AI Dashboard")
     st.markdown("""
-    Select a pipeline from the sidebar to view **Prediction Tables** and **Explainability Charts**.
+    **Available Pipelines:**
+    - Classification:  confusion matrix + top 10 features
+    - Regression: actual vs predicted + coefficients + top 10 features
+    - Time Series: forecast + top 10 features
+    - Association Rules: top 10 rules + lift vs confidence 
     """)
 
 elif page == "Classification":
-    st.title("🎯 Classification Dashboard")
+    st.title("Classification Dashboard")
     df = load_class_data()
     fi = get_class_importance()
     
-    col1, col2 = st.columns([2, 1])
-    with col1:
-        st.subheader("Prediction Table")
-        st.dataframe(df, height=350)
-    with col2:
-        st.subheader("Confusion Matrix")
-        cm = confusion_matrix(df["actual_class"], df["predicted_class"])
-        fig_cm = px.imshow(cm, text_auto=True, color_continuous_scale='Blues',
-                           x=['Pred 0', 'Pred 1'], y=['Act 0', 'Act 1'], height=350)
-        st.plotly_chart(fig_cm, use_container_width=True)
-        
+    st.subheader("Prediction Table")
+    st.dataframe(df, height=350)
 
+    st.subheader("Confusion Matrix")
+    cm = confusion_matrix(df["actual_class"], df["predicted_class"])
+    fig_cm = px.imshow(cm, text_auto=True, color_continuous_scale='Blues',
+                           x=['Pred 0', 'Pred 1'], y=['Act 0', 'Act 1'], height=350)
+    st.plotly_chart(fig_cm, use_container_width=True)
+        
     st.subheader("Top 10 Feature Importance")
     fig_fi = px.bar(fi, x='importance', y='feature', orientation='h', color='importance')
     st.plotly_chart(fig_fi, use_container_width=True)
 
 elif page == "Regression":
-    st.title("📈 Regression Dashboard")
+    st.title("Regression Dashboard")
     df = load_reg_data()
     fi = get_reg_importance()
     
     st.subheader("Actual vs Predicted Weekly Sales")
-    # Using Plotly for a better "Appropriate Graph" than the basic line chart
     fig_reg = px.line(df, y=['Actual_Weekly_Sales', 'Predicted_Weekly_Sales'], 
                       title="Sales Performance Tracking")
     st.plotly_chart(fig_reg, use_container_width=True)
-    
 
     st.subheader("Top 10 Feature Importance")
     fig_fi = px.bar(fi, x='importance', y='feature', orientation='h', color='importance')
     st.plotly_chart(fig_fi, use_container_width=True)
 
 elif page == "Time Series":
-    st.title("🕒 Time Series Dashboard")
+    st.title("Time Series Dashboard")
     df_ts = load_ts_data()
     comp = get_components()
     
     st.subheader("Forecast vs Actual")
-    # Grouping by timestamp to ensure single lines
     df_plot = df_ts.groupby('timestamp')[['actual', 'forecast']].sum().reset_index()
     fig_ts = px.line(df_plot, x='timestamp', y=['actual', 'forecast'], color_discrete_sequence=['blue', 'red'])
     st.plotly_chart(fig_ts, use_container_width=True)
@@ -133,7 +130,7 @@ elif page == "Time Series":
     st.table(comp)
 
 elif page == "Association Rules":
-    st.title("🛒 Association Rules")
+    st.title("Association Rules")
     rules_df = load_rules()
     top_rules = get_top_rules(rules_df)
     
