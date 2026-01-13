@@ -138,24 +138,28 @@ elif page == "Time Series":
 elif page == "Association Rules":
     st.title("Association Rules Dashboard")
 
-    # --- Summary Metrics ---
-    st.subheader("Association Rule Summary")
-    summary = pd.read_json("association_summary.json", typ="series")
-    st.json(summary)
+    # --- Load Top Rules ---
+    rules_df = pd.read_csv("top_association_rules.csv")
 
-    # --- Full Association Rules Table ---
-    st.subheader("All Association Rules")
-    rules_df = pd.read_csv("final_association_rules.csv")
+    # --- Top Rules Table ---
+    st.subheader("Top Association Rules")
     st.dataframe(rules_df, use_container_width=True)
 
-    # --- Top Association Rules ---
-    st.subheader("Top Association Rules (by Lift)")
-    top_rules = pd.read_csv("top_association_rules.csv")
-    st.bar_chart(
-        top_rules.set_index("rule")["lift"]
+    # --- Lift vs Confidence Scatter Plot ---
+    st.subheader("Lift vs Confidence Analysis")
+
+    fig = px.scatter(
+        rules_df,
+        x="confidence",
+        y="lift",
+        size="support",
+        hover_data=["antecedents", "consequents"],
+        title="Association Rules: Lift vs Confidence",
+        labels={
+            "confidence": "Confidence",
+            "lift": "Lift",
+            "support": "Support"
+        }
     )
 
-    # --- Association Visualization ---
-    st.subheader("Association Strength Visualization")
-    st.image("Association_visuals.png", caption="Association Rules Network / Strength Visualization", use_container_width=True)
-
+    st.plotly_chart(fig, use_container_width=True)
