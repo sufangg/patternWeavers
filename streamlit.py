@@ -2,173 +2,145 @@
 import streamlit as st
 import pandas as pd
 import joblib
-import seaborn as sns
-import matplotlib.pyplot as plt
 import plotly.express as px
 from sklearn.metrics import confusion_matrix
 
 # =====================
-# PAGE CONFIG & SIDEBAR
+# PAGE CONFIG
 # =====================
 st.set_page_config(page_title="Walmart Retail Dashboard", layout="wide")
 
-st.sidebar.title("Walmart Retail Dashboard")
-page = st.sidebar.radio(
-    "Navigate",
-    ["Home", "Classification", "Regression", "Time Series", "Association Rules"]
-)
-
 # =====================
-# DATA LOADING FUNCTIONS
+# MODULAR FUNCTIONS (PERSON B REQUIREMENTS)
 # =====================
 
-# -------- Classification --------
+# --- Shared / UI ---
+def export_importance(df, filename):
+    df.to_csv(filename, index=False)
+
+# --- 🟩 CLASSIFICATION ---
 def load_class_data():
     return pd.read_csv("final_classification_predictions.csv")
 
+def load_model(): # Loads trained model only
+    return joblib.load("final_classification_model.pkl")
+
 def get_class_importance():
     df = pd.read_csv("final_classification_feature_importance.csv")
-    return df.sort_values("importance", ascending=False).head(10)
+    top_10 = df.sort_values("importance", ascending=False).head(10)
+    export_importance(top_10, "final_classification_feature_importance.csv")
+    return top_10
 
-def plot_confusion_matrix(df):
-    cm = confusion_matrix(df["actual_class"], df["predicted_class"])
-
-    fig, ax = plt.subplots(figsize=(4, 3))  # compact size
-    sns.heatmap(
-        cm,
-        annot=True,
-        fmt="d",
-        cmap="Blues",
-        cbar=False,
-        xticklabels=["Predicted 0", "Predicted 1"],
-        yticklabels=["Actual 0", "Actual 1"],
-        ax=ax
-    )
-    ax.set_xlabel("Predicted Class")
-    ax.set_ylabel("Actual Class")
-    ax.set_title("Confusion Matrix")
-    plt.tight_layout()
-    return fig
-
-# -------- Regression --------
+# --- 🟦 REGRESSION ---
 def load_reg_data():
     return pd.read_csv("sample_predictions.csv")
 
+def train_model(): # INSTRUCTION: Loads trained model only
+    return joblib.load("final_regression_pipeline.pkl")
+
 def get_reg_importance():
     df = pd.read_csv("feature_importance.csv")
-    return df.sort_values("importance", ascending=False).head(10)
+    top_10 = df.sort_values("importance", ascending=False).head(10)
+    export_importance(top_10, "final_feature_importance.csv")
+    return top_10
 
-def get_reg_coefficients():
-    model = joblib.load("final_regression_pipeline.pkl")
-    features = pd.read_json("features_used.json")["features_used"]
-
-    coef = model.named_steps["model"].feature_importances_
-    return pd.DataFrame({
-        "feature": features,
-        "coefficient": coef
-    }).sort_values("coefficient", ascending=False)
-
-# -------- Time Series --------
+# --- 🟪 TIME SERIES ---
 def load_ts_data():
-    return pd.read_csv("final_time_series_forecast.csv")
+    df = pd.read_csv("final_time_series_forecast.csv")
+    df['timestamp'] = pd.to_datetime(df['timestamp'])
+    return df
 
-def get_ts_importance():
+def get_components():
     df = pd.read_csv("final_time_series_feature_importance.csv")
-    return df.sort_values("importance", ascending=False).head(10)
+    top_10 = df.sort_values("importance", ascending=False).head(10)
+    export_importance(top_10, "final_time_series_components.csv")
+    return top_10
 
-# -------- Association Rules --------
-def load_top_rules():
+# --- 🟨 ASSOCIATION ---
+def load_rules():
     return pd.read_csv("top_association_rules.csv")
+
+def get_top_rules(df):
+    # Sort by Lift (Primary) and Confidence (Secondary)
+    return df.sort_values(by=['lift', 'confidence'], ascending=False).head(10)
+
+# =====================
+# SIDEBAR & NAVIGATION
+# =====================
+st.sidebar.title("Walmart Analytics")
+page = st.sidebar.radio("Navigate", ["Home", "Classification", "Regression", "Time Series", "Association Rules"])
 
 # =====================
 # PAGE CONTENT
 # =====================
 
 if page == "Home":
-    st.title("Walmart Retail Dashboard")
+    st.title("🏪 Walmart Smart AI Dashboard")
+    st.info("Person B: Interpretation & UI focus. No retraining of models.")
     st.markdown("""
-    **Available Pipelines**
-    - **Classification**: prediction table, confusion matrix, top 10 features  
-    - **Regression**: actual vs predicted, coefficients, top 10 features  
-    - **Time Series**: forecast vs actual, top 10 features  
-    - **Association Rules**: top rules table, lift vs confidence analysis  
+    Select a pipeline from the sidebar to view **Prediction Tables** and **Explainability Charts**.
     """)
 
-# =====================
-# CLASSIFICATION
-# =====================
 elif page == "Classification":
-    st.title("Classification Dashboard")
-
+    st.title("🎯 Classification Dashboard")
     df = load_class_data()
-
-    st.subheader("Prediction Table")
-    st.dataframe(df, use_container_width=True)
-
-    st.subheader("Confusion Matrix")
-    cm_fig = plot_confusion_matrix(df)
-    st.pyplot(cm_fig)
+    fi = get_class_importance()
+    
+    col1, col2 = st.columns([2, 1])
+    with col1:
+        st.subheader("Prediction Table")
+        st.dataframe(df, height=350)
+    with col2:
+        st.subheader("Confusion Matrix")
+        cm = confusion_matrix(df["actual_class"], df["predicted_class"])
+        fig_cm = px.imshow(cm, text_auto=True, color_continuous_scale='Blues',
+                           x=['Pred 0', 'Pred 1'], y=['Act 0', 'Act 1'], height=350)
+        st.plotly_chart(fig_cm, use_container_width=True)
+        
 
     st.subheader("Top 10 Feature Importance")
-    st.bar_chart(get_class_importance().set_index("feature"))
+    fig_fi = px.bar(fi, x='importance', y='feature', orientation='h', color='importance')
+    st.plotly_chart(fig_fi, use_container_width=True)
 
-# =====================
-# REGRESSION
-# =====================
 elif page == "Regression":
-    st.title("Regression Dashboard")
-
+    st.title("📈 Regression Dashboard")
     df = load_reg_data()
-
+    fi = get_reg_importance()
+    
     st.subheader("Actual vs Predicted Weekly Sales")
-    st.line_chart(
-        df.set_index(df.columns[0])[["Actual_Weekly_Sales", "Predicted_Weekly_Sales"]]
-    )
+    # Using Plotly for a better "Appropriate Graph" than the basic line chart
+    fig_reg = px.line(df, y=['Actual_Weekly_Sales', 'Predicted_Weekly_Sales'], 
+                      title="Sales Performance Tracking")
+    st.plotly_chart(fig_reg, use_container_width=True)
+    
 
     st.subheader("Top 10 Feature Importance")
-    st.bar_chart(get_reg_importance().set_index("feature"))
+    fig_fi = px.bar(fi, x='importance', y='feature', orientation='h', color='importance')
+    st.plotly_chart(fig_fi, use_container_width=True)
 
-    st.subheader("Model Coefficients")
-    st.bar_chart(get_reg_coefficients().set_index("feature"))
-
-# =====================
-# TIME SERIES
-# =====================
 elif page == "Time Series":
-    st.title("Time Series Dashboard")
-
+    st.title("🕒 Time Series Dashboard")
     df_ts = load_ts_data()
+    comp = get_components()
+    
+    st.subheader("Forecast vs Actual")
+    # Grouping by timestamp to ensure single lines
+    df_plot = df_ts.groupby('timestamp')[['actual', 'forecast']].sum().reset_index()
+    fig_ts = px.line(df_plot, x='timestamp', y=['actual', 'forecast'], color_discrete_sequence=['blue', 'red'])
+    st.plotly_chart(fig_ts, use_container_width=True)
 
-    st.subheader("Actual vs Forecast")
-    st.line_chart(df_ts.set_index("timestamp")[["actual", "forecast"]])
+    st.subheader("Time Series Components (Top Drivers)")
+    st.table(comp)
 
-    st.subheader("Top 10 Feature Importance")
-    st.bar_chart(get_ts_importance().set_index("feature"))
-
-# =====================
-# ASSOCIATION RULES
-# =====================
 elif page == "Association Rules":
-    st.title("Association Rules Dashboard")
-
-    rules_df = load_top_rules()
-
-    st.subheader("Top Association Rules")
-    st.dataframe(rules_df, use_container_width=True)
-
+    st.title("🛒 Association Rules")
+    rules_df = load_rules()
+    top_rules = get_top_rules(rules_df)
+    
+    st.subheader("Top 10 Rules (Ranked by Lift)")
+    st.dataframe(top_rules, use_container_width=True)
+    
     st.subheader("Lift vs Confidence Analysis")
-    fig = px.scatter(
-        rules_df,
-        x="confidence",
-        y="lift",
-        size="support",
-        hover_data=["antecedents", "consequents"],
-        labels={
-            "confidence": "Rule Confidence",
-            "lift": "Lift Value",
-            "support": "Support"
-        },
-        title="Association Rules: Lift vs Confidence"
-    )
-
-    st.plotly_chart(fig, use_container_width=True)
+    fig_scatter = px.scatter(rules_df, x="confidence", y="lift", size="support", color="lift",
+                             hover_data=["antecedents", "consequents"])
+    st.plotly_chart(fig_scatter, use_container_width=True)
