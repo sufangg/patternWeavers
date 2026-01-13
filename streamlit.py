@@ -127,7 +127,9 @@ elif page == "Time Series":
     st.plotly_chart(fig_ts, use_container_width=True)
 
     st.subheader("Time Series Components (Top Drivers)")
-    st.table(comp)
+    fig_comp = px.bar(comp, x='importance', y='feature', orientation='h', 
+                      color='importance', color_continuous_scale='Reds')
+    st.plotly_chart(fig_comp, use_container_width=True)
 
 elif page == "Association Rules":
     st.title("Association Rules")
