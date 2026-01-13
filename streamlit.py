@@ -32,7 +32,7 @@ def get_class_importance():
 def plot_confusion_matrix(df, true_col='actual_class', pred_col='predicted_class'):
     labels = sorted(df[true_col].unique())
     cm = confusion_matrix(df[true_col], df[pred_col], labels=labels)
-    fig, ax = plt.subplots(figsize=(6,5))
+    fig, ax = plt.subplots(figsize=(4,3))
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=labels, yticklabels=labels, ax=ax)
     ax.set_xlabel('Predicted Class', fontsize=12)
     ax.set_ylabel('Actual Class', fontsize=12)
