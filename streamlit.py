@@ -1,10 +1,11 @@
-# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*- 
 import streamlit as st
 import pandas as pd
 import joblib
 import plotly.express as px
 import seaborn as sns
 import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix
 
 # =====================
 # SIDEBAR NAVIGATION
@@ -28,18 +29,26 @@ def get_class_importance():
     df = pd.read_csv('final_classification_feature_importance.csv')
     return df.sort_values('importance', ascending=False).head(10)
 
+def plot_confusion_matrix(df, true_col='actual_class', pred_col='predicted_class'):
+    labels = sorted(df[true_col].unique())
+    cm = confusion_matrix(df[true_col], df[pred_col], labels=labels)
+    fig, ax = plt.subplots(figsize=(6,5))
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=labels, yticklabels=labels, ax=ax)
+    ax.set_xlabel('Predicted Class', fontsize=12)
+    ax.set_ylabel('Actual Class', fontsize=12)
+    ax.set_title('Confusion Matrix', fontsize=14)
+    return fig
+
 # -------- Regression --------
 def load_reg_data():
     return pd.read_csv('sample_predictions.csv')
 
 def load_reg_model():
-    # Be aware: may need 'DecisionTreeRegressor-only' pickle for Streamlit Cloud
     return joblib.load('final_regression_pipeline.pkl')
 
 def get_reg_coefficients():
     model = load_reg_model()
     try:
-        # For linear models only; DecisionTree uses feature_importances_
         coef = model.named_steps['model'].feature_importances_
         features = pd.read_json('features_used.json')['features_used']
     except:
@@ -75,7 +84,7 @@ if page == "Home":
     st.title("Smart AI Dashboard")
     st.markdown("""
     **Available Pipelines:**
-    - Classification: predicted class distribution + top 10 features
+    - Classification: predicted class distribution + confusion matrix + top 10 features
     - Regression: actual vs predicted + coefficients + top 10 features
     - Time Series: forecast + top 10 features
     - Association Rules: top 10 rules + lift vs confidence (placeholder)
@@ -85,13 +94,29 @@ elif page == "Classification":
     st.title("Classification Dashboard")
     df = load_class_data()
 
-    # Predicted class distribution
+    # Predicted class distribution (bar chart)
     st.subheader("Predicted Class Distribution")
-    fig = px.histogram(df, x="predicted_class", color="predicted_class",
-                       title="Predicted Class Counts", labels={"predicted_class":"Class"})
+    fig = px.histogram(
+        df,
+        x="predicted_class",
+        color="predicted_class",
+        title="Predicted Class Counts",
+        labels={"predicted_class":"Predicted Class"},
+        color_discrete_sequence=px.colors.qualitative.Set2
+    )
+    fig.update_layout(
+        xaxis_title="Predicted Class",
+        yaxis_title="Number of Instances",
+        showlegend=False
+    )
     st.plotly_chart(fig, use_container_width=True)
 
-    # Top 10 feature importance
+    # Confusion matrix (heatmap)
+    st.subheader("Confusion Matrix")
+    cm_fig = plot_confusion_matrix(df, true_col='actual_class', pred_col='predicted_class')
+    st.pyplot(cm_fig)
+
+    # Top 10 feature importance (bar chart)
     st.subheader("Top 10 Feature Importance")
     st.bar_chart(get_class_importance().set_index('feature'))
 
