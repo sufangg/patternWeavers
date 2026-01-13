@@ -110,14 +110,12 @@ def get_top_rules():
 if page == "Home":
     st.title("📊 Walmart Retail Dashboard")
     st.markdown("""
-    **This dashboard provides explainability and visualization for finalized models.**
-
-    **Pipelines Included:**
-    -  **Classification**: predictions, confusion matrix, feature importance
-    -  **Regression**: actual vs predicted, feature impact, coefficients
-    -  **Time Series**: forecast comparison, trend components
-    -  **Association Rules**: top rules, lift vs confidence analysis
-    ***)
+    **Available Pipelines**
+    - **Classification**: prediction table, confusion matrix, top 10 features  
+    - **Regression**: actual vs predicted, coefficients, top 10 features  
+    - **Time Series**: forecast vs actual, top 10 features  
+    - **Association Rules**: top rules table, lift vs confidence analysis  
+    """)
 
 # ---------------------- CLASSIFICATION ----------------------
 elif page == "Classification":
