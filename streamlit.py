@@ -141,8 +141,7 @@ elif page == "Association Rules":
     st.subheader("Top 10 Purchase Rules by Lift Strength")
     top_rules['rule'] = top_rules['antecedents'].astype(str) + " -> " + top_rules['consequents'].astype(str)
     fig_rule_bar = px.bar(top_rules, x='lift', y='rule', orientation='h', 
-                          color='lift', color_continuous_scale='Plasma',
-                          title="Rule Strength Analysis")
+                          color='lift', title="Rule Strength Analysis")
     st.plotly_chart(fig_rule_bar, use_container_width=True)
     
     st.subheader("Lift vs Confidence Analysis")
