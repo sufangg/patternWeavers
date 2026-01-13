@@ -118,6 +118,19 @@ elif page == "Classification":
     st.subheader("Top 10 Feature Importance")
     fig_fi = px.bar(fi, x='importance', y='feature', orientation='h', color='importance')
     st.plotly_chart(fig_fi, use_container_width=True)
+    
+    st.markdown("""
+    ### Business Insight:
+
+    **What is happening:**  
+    The classification model shows strong predictive performance, as indicated by a high number of correct predictions in the confusion matrix. Feature importance analysis reveals that **Month** is the most influential factor, while **Store** and **Year** have comparatively lower impact.
+
+    **Why it matters:**  
+    This indicates that **seasonal patterns drive customer behavior more strongly than store location or long-term trends**. Demand changes significantly depending on the month, suggesting predictable seasonal cycles.
+
+    **Decision supported:**  
+    Management should prioritize **seasonal-based planning**, such as adjusting inventory levels, staffing, and promotional campaigns according to high-impact months rather than applying uniform strategies across the year.
+    """)
 
 elif page == "Regression":
     st.title("Regression Dashboard")
@@ -132,6 +145,18 @@ elif page == "Regression":
     st.subheader("Top 10 Feature Importance")
     fig_fi = px.bar(fi, x='importance', y='feature', orientation='h', color='importance')
     st.plotly_chart(fig_fi, use_container_width=True)
+    st.markdown("""
+    ### Business Insight:
+  
+    **What is happening:**  
+    The regression model closely tracks actual weekly sales trends, demonstrating good predictive accuracy. Feature importance analysis shows that **Temperature** and **Department** are the most significant drivers of sales.
+
+    **Why it matters:**  
+    External factors like weather conditions have a measurable impact on customer purchasing behavior. Different departments respond differently to these factors, highlighting variations in demand sensitivity.
+
+    **Decision supported:**  
+    Sales forecasting and inventory planning should incorporate **weather forecasts** and **department-level demand patterns** to improve stock availability and reduce overstock or shortages.
+    """)
 
 elif page == "Time Series":
     st.title("Time Series Dashboard")
@@ -142,10 +167,22 @@ elif page == "Time Series":
     df_plot = df_ts.groupby('timestamp')[['actual', 'forecast']].sum().reset_index()
     fig_ts = px.line(df_plot, x='timestamp', y=['actual', 'forecast'], color_discrete_sequence=['blue', 'red'])
     st.plotly_chart(fig_ts, use_container_width=True)
-
+    
     st.subheader("Time Series Components (Top Drivers)")
     fig_comp = px.bar(comp, x='importance', y='feature', orientation='h', color='importance')
     st.plotly_chart(fig_comp, use_container_width=True)
+    st.markdown("""
+    ### Business Insight:
+
+   **What is happening:**  
+    The forecasted sales closely follow actual sales trends, indicating that the time series model captures both short-term fluctuations and long-term patterns. The **Lag_12** feature is the strongest contributor, highlighting annual seasonality.
+
+    **Why it matters:**  
+    Sales behavior tends to repeat yearly, making historical seasonal trends highly valuable for forecasting. Recent sales data also influences near-term performance.
+
+    **Decision supported:**  
+    This supports **long-term seasonal planning** (annual budgeting and promotions) while also enabling **short-term operational adjustments** based on recent sales trends.
+    """)
 
 elif page == "Association Rules":
     st.title("Association Rules")
@@ -160,6 +197,7 @@ elif page == "Association Rules":
     fig_rule_bar = px.bar(top_rules, x='lift', y='rule', orientation='h', 
                           color='lift', title="Rule Strength Analysis")
     st.plotly_chart(fig_rule_bar, use_container_width=True)
+    
     
     st.subheader("Lift vs Confidence Analysis")
     fig_scatter = px.scatter(rules_df, x="confidence", y="lift", size="support", color="lift",
