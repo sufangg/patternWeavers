@@ -128,14 +128,14 @@ elif page == "Regression":
     st.subheader("Actual vs Predicted")
     st.line_chart(df.set_index(df.columns[0])[['Actual_Weekly_Sales', 'Predicted_Weekly_Sales']])
 
-    # Model Coefficients / Feature Importances
-    st.subheader("Model Coefficients / Feature Importances")
-    coeff_df = get_reg_coefficients()
-    st.bar_chart(coeff_df.set_index('feature'))
-
     # Top 10 Feature Importance (precomputed)
     st.subheader("Top 10 Feature Importance (CSV)")
     st.bar_chart(get_reg_importance().set_index('feature'))
+    
+    # Model Coefficients
+    st.subheader("Model Coefficients")
+    coeff_df = get_reg_coefficients()
+    st.bar_chart(coeff_df.set_index('feature'))
 
 elif page == "Time Series":
     st.title("Time Series Dashboard")
