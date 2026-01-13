@@ -2,7 +2,6 @@
 import streamlit as st
 import pandas as pd
 import joblib
-import plotly.express as px
 import seaborn as sns
 import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix
@@ -84,7 +83,7 @@ if page == "Home":
     st.title("Smart AI Dashboard")
     st.markdown("""
     **Available Pipelines:**
-    - Classification: predicted class distribution + confusion matrix + top 10 features
+    - Classification: prediction table + confusion matrix + top 10 features
     - Regression: actual vs predicted + coefficients + top 10 features
     - Time Series: forecast + top 10 features
     - Association Rules: top 10 rules + lift vs confidence (placeholder)
@@ -94,52 +93,26 @@ elif page == "Classification":
     st.title("Classification Dashboard")
     df = load_class_data()
 
-    # Toggle between table and charts
-    view_option = st.radio("Select view:", ["Table", "Charts"])
+    # --- Prediction Table ---
+    st.subheader("Prediction Table")
+    st.dataframe(df, use_container_width=True)
 
-    if view_option == "Table":
-        st.subheader("Prediction Table")
-        st.dataframe(df, use_container_width=True)
-    else:
-        # Predicted class distribution (bar chart)
-        st.subheader("Predicted Class Distribution")
-        fig = px.histogram(
-            df,
-            x="predicted_class",
-            color="predicted_class",
-            title="Predicted Class Counts",
-            labels={"predicted_class":"Predicted Class"},
-            color_discrete_sequence=px.colors.qualitative.Set2
-        )
-        fig.update_layout(
-            xaxis_title="Predicted Class",
-            yaxis_title="Number of Instances",
-            showlegend=False
-        )
-        st.plotly_chart(fig, use_container_width=True)
+    # --- Confusion Matrix ---
+    st.subheader("Confusion Matrix")
+    cm_fig = plot_confusion_matrix(df, true_col='actual_class', pred_col='predicted_class')
+    st.pyplot(cm_fig)
 
-        # Confusion matrix (heatmap)
-        st.subheader("Confusion Matrix")
-        cm_fig = plot_confusion_matrix(df, true_col='actual_class', pred_col='predicted_class')
-        st.pyplot(cm_fig)
-
-    # Top 10 feature importance (bar chart)
+    # --- Top 10 Feature Importance ---
     st.subheader("Top 10 Feature Importance")
     st.bar_chart(get_class_importance().set_index('feature'))
 
 elif page == "Regression":
     st.title("Regression Dashboard")
     df = load_reg_data()
-
-    # Actual vs Predicted line chart
     st.subheader("Actual vs Predicted")
     st.line_chart(df.set_index(df.columns[0])[['Actual_Weekly_Sales', 'Predicted_Weekly_Sales']])
-
-    # Top 10 Feature Importance (precomputed)
-    st.subheader("Top 10 Feature Importance (CSV)")
+    st.subheader("Top 10 Feature Importance")
     st.bar_chart(get_reg_importance().set_index('feature'))
-    
-    # Model Coefficients
     st.subheader("Model Coefficients")
     coeff_df = get_reg_coefficients()
     st.bar_chart(coeff_df.set_index('feature'))
@@ -147,13 +120,11 @@ elif page == "Regression":
 elif page == "Time Series":
     st.title("Time Series Dashboard")
     df_ts = load_ts_data()
-
     st.subheader("Actual vs Forecast")
     st.line_chart(df_ts.set_index('timestamp')[['actual', 'forecast']])
-
     st.subheader("Top 10 Feature Importance")
     st.bar_chart(get_ts_importance().set_index('feature'))
 
 elif page == "Association Rules":
     st.title("Association Rules Dashboard")
-    st.info("placeholder - awaiting Person A data")
+    st.info("placeholder")
