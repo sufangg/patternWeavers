@@ -116,7 +116,8 @@ if page == "Home":
     -  **Classification**: predictions, confusion matrix, feature importance
     -  **Regression**: actual vs predicted, feature impact, coefficients
     -  **Time Series**: forecast comparison, trend components
-    -  **Association Rules**: top rules, lift vs confidence analysis)
+    -  **Association Rules**: top rules, lift vs confidence analysis
+    ***)
 
 # ---------------------- CLASSIFICATION ----------------------
 elif page == "Classification":
