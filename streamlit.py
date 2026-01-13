@@ -123,13 +123,19 @@ elif page == "Classification":
     ### Business Insight:
 
     **What is happening:**  
-    The classification model shows strong predictive performance, as indicated by a high number of correct predictions in the confusion matrix. Feature importance analysis reveals that **Month** is the most influential factor, while **Store** and **Year** have comparatively lower impact.
+    The confusion matrix shows that the classification model performs very well, with high correct predictions for both classes. Most observations fall along the diagonal, indicating strong model accuracy. There are very few false positives (2 cases) and a small number of false negatives (10 cases), suggesting the model is reliable in identifying both outcomes.
+
+    The feature importance chart clearly shows that **Month** is the most influential feature, while **Year** and **Store** contribute very little to the prediction.
 
     **Why it matters:**  
-    This indicates that **seasonal patterns drive customer behavior more strongly than store location or long-term trends**. Demand changes significantly depending on the month, suggesting predictable seasonal cycles.
+    This indicates that **seasonality plays a dominant role** in determining the target class, while long-term trends (Year) and store location (Store) have minimal impact. Customer behavior changes significantly depending on the month, reflecting predictable seasonal demand patterns.
+
+    The low misclassification rate means the model can be trusted for operational decision-making.
 
     **Decision supported:**  
-    Management should prioritize **seasonal-based planning**, such as adjusting inventory levels, staffing, and promotional campaigns according to high-impact months rather than applying uniform strategies across the year.
+    - Focus planning and decision-making around **monthly and seasonal trends**  
+    - Apply **month-based strategies** for promotions, staffing, and inventory  
+    - Reduce reliance on **store-specific or year-based assumptions**, as they add limited predictive value
     """)
 
 elif page == "Regression":
@@ -149,13 +155,20 @@ elif page == "Regression":
     ### Business Insight:
   
     **What is happening:**  
-    The regression model closely tracks actual weekly sales trends, demonstrating good predictive accuracy. Feature importance analysis shows that **Temperature** and **Department** are the most significant drivers of sales.
+    The Actual vs Predicted Weekly Sales chart shows that the regression model closely follows actual sales patterns, including major peaks and drops. This indicates strong predictive performance, as the model successfully captures sales fluctuations over time with only minor deviations.
+
+    The feature importance analysis shows that **Temperature** is the most influential factor affecting weekly sales, followed by **Department**. Other variables such as Store, MarkDowns, fuel price, and economic indicators contribute less significantly to the prediction.
 
     **Why it matters:**  
-    External factors like weather conditions have a measurable impact on customer purchasing behavior. Different departments respond differently to these factors, highlighting variations in demand sensitivity.
+    This suggests that **external environmental conditions**, particularly temperature, have a strong impact on customer purchasing behavior. Different departments respond differently to these conditions, highlighting the importance of department-level demand sensitivity.
+    
+    Accurate sales prediction enables better operational planning and reduces uncertainty in decision-making.
 
     **Decision supported:**  
-    Sales forecasting and inventory planning should incorporate **weather forecasts** and **department-level demand patterns** to improve stock availability and reduce overstock or shortages.
+    - Incorporate **weather forecasts** into sales and inventory planning  
+    - Adjust stock levels and promotions based on **department-specific demand patterns**  
+    - Use the model to anticipate **sales spikes during extreme temperature periods**  
+    - Reduce overstock and stockouts through improved demand forecasting
     """)
 
 elif page == "Time Series":
@@ -174,14 +187,20 @@ elif page == "Time Series":
     st.markdown("""
     ### Business Insight:
 
-   **What is happening:**  
-    The forecasted sales closely follow actual sales trends, indicating that the time series model captures both short-term fluctuations and long-term patterns. The **Lag_12** feature is the strongest contributor, highlighting annual seasonality.
+    **What is happening:**  
+    The forecasted sales closely follow the actual sales trend, indicating that the time series model effectively captures both short-term fluctuations and long-term patterns. The alignment between forecast and actual values demonstrates reliable forecasting performance.
+
+    The feature importance analysis highlights **Lag_12** as the strongest contributor, indicating the presence of strong annual seasonality in sales behavior. Recent lag features also contribute, showing that recent sales influence near-term predictions.
 
     **Why it matters:**  
-    Sales behavior tends to repeat yearly, making historical seasonal trends highly valuable for forecasting. Recent sales data also influences near-term performance.
+    Sales patterns tend to repeat on a yearly basis, making historical seasonal data highly valuable for forecasting future demand. Understanding these recurring patterns improves the accuracy of long-term sales planning.
+
+    Reliable time series forecasting supports both strategic and operational decision-making.
 
     **Decision supported:**  
-    This supports **long-term seasonal planning** (annual budgeting and promotions) while also enabling **short-term operational adjustments** based on recent sales trends.
+    - Support **long-term seasonal planning**, such as annual budgeting and promotional strategies  
+    - Enable **short-term operational adjustments** based on recent sales trends  
+    - Improve inventory planning by anticipating recurring seasonal demand cycles
     """)
 
 elif page == "Association Rules":
@@ -203,3 +222,23 @@ elif page == "Association Rules":
     fig_scatter = px.scatter(rules_df, x="confidence", y="lift", size="support", color="lift",
                              hover_data=["antecedents", "consequents"])
     st.plotly_chart(fig_scatter, use_container_width=True)
+
+    st.markdown("""
+    ### Business Insight:
+
+    **What is happening:**  
+    The association rule analysis identifies strong co-purchasing patterns between specific departments and time periods. Rules with high lift values indicate that certain items or departments are purchased together more frequently than expected by chance, revealing meaningful relationships within customer baskets.
+
+    The Lift vs Confidence analysis shows several rules with both high confidence and high lift, indicating that these purchasing relationships are reliable and not random.
+
+    **Why it matters:**  
+    High-lift association rules reveal valuable **cross-selling opportunities** and highlight how customer purchasing behavior changes across seasons. These insights help identify complementary products and department combinations that naturally belong together.
+
+    Understanding these patterns allows Walmart to increase basket size and improve customer shopping experience.
+
+    **Decision supported:**  
+    - Design **bundle promotions** and cross-department discounts  
+    - Optimize **product placement** by positioning complementary items closer together  
+    - Improve **seasonal marketing strategies** based on co-purchasing behavior  
+    - Enhance **inventory planning** by stocking related products together
+    """)
