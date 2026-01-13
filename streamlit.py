@@ -28,23 +28,25 @@ def get_class_importance():
     df = pd.read_csv('final_classification_feature_importance.csv')
     return df.sort_values('importance', ascending=False).head(10)
 
-def display_confusion_matrix(df):
-    st.subheader("Confusion Matrix")
-    # Compute the matrix
-    cm = confusion_matrix(df['actual_class'], df['predicted_class'])
-    
-    fig, ax = plt.subplots(figsize=(6, 4))
-    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', 
-                xticklabels=['Predicted 0', 'Predicted 1'], 
-                yticklabels=['Actual 0', 'Actual 1'], ax=ax)
-    plt.ylabel('Actual')
-    plt.xlabel('Predicted')
-    st.pyplot(fig)
-    
-    # Interpretation for the user
-    st.write("**Interpretation:**")
-    st.write(f"- The model correctly identified {cm[1,1]} 'High Performers' (True Positives).")
-    st.write(f"- It missed {cm[1,0]} actual 'High Performers' (False Negatives).")
+def plot_confusion_matrix(df, true_col='actual_class', pred_col='predicted_class'):
+    cm = confusion_matrix(df[true_col], df[pred_col])
+
+    fig, ax = plt.subplots(figsize=(4, 3))  # smaller size
+    sns.heatmap(
+        cm,
+        annot=True,
+        fmt='d',
+        cmap='Blues',
+        cbar=False,
+        xticklabels=['Predicted 0', 'Predicted 1'],
+        yticklabels=['Actual 0', 'Actual 1'],
+        ax=ax
+    )
+    ax.set_xlabel('Predicted Class')
+    ax.set_ylabel('Actual Class')
+    ax.set_title('Confusion Matrix')
+    plt.tight_layout()
+    return fig
 
 # -------- Regression --------
 def load_reg_data():
