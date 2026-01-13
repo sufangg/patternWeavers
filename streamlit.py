@@ -149,4 +149,4 @@ elif page == "Time Series":
 
 elif page == "Association Rules":
     st.title("Association Rules Dashboard")
-    st.info("placeholder - awaiting Person A data")
+    st.info("placeholder")
