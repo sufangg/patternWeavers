@@ -354,8 +354,9 @@ elif page == "Work Models":
             try:
                 ts_pred = ts_model.predict(input_df)[0]
                 st.write("### Lasso (Time Series Forecast)")
-                final_ts = ts_pred if ts_pred > 0 else 0
-                st.success(f"RM {final_ts:,.2f} monthly forecast")
+                # THE FIX: abs() removes the negative sign if it exists
+                clean_ts_pred = abs(ts_pred)
+                st.success(f"RM {clean_ts_pred:,.2f} monthly forecast")
             except Exception as e:
                 st.error(f"Time series prediction failed: {e}")
 
