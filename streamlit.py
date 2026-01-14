@@ -316,6 +316,7 @@ elif page == "Work Models":
         "Fuel_Price": [fuel],
         "CPI": [feature_ref['CPI'].mean()],
         "Unemployment": [unemp],
+        "Type": [feature_ref['Type'].mode()[0]],
         "MarkDown1": [feature_ref['MarkDown1'].median()], 
         "MarkDown2": [feature_ref['MarkDown2'].median()],
         "MarkDown3": [feature_ref['MarkDown3'].median()],
