@@ -305,34 +305,24 @@ elif page == "Work Models":
         )
 
     # Prepare input DataFrame for models
-    # Prepare input DataFrame for models
-    # We add the "missing" columns using defaults from your data (feature_ref)
     input_df = pd.DataFrame({
         "Store": [store],
         "Dept": [dept],
         "Month": [month],
-        "Year": [2012],  # Added: Using 2012 as a standard reference year
+        "Year": [2012],  # Use 2012 as a placeholder
         "IsHoliday": [is_holiday],
         "Size": [size],
         "Temperature": [temp],
         "Fuel_Price": [fuel],
         "CPI": [feature_ref['CPI'].mean()],
         "Unemployment": [unemp],
-        
-        # --- Missing Regression Features ---
-        "Type": [feature_ref['Type'].mode()[0]], # Added: Most common store type
-        "MarkDown1": [feature_ref['MarkDown1'].mean()], # Added
-        "MarkDown2": [feature_ref['MarkDown2'].mean()], # Added
-        "MarkDown3": [feature_ref['MarkDown3'].mean()], # Added
-        "MarkDown4": [feature_ref['MarkDown4'].mean()], # Added
-        "MarkDown5": [feature_ref['MarkDown5'].mean()], # Added
-        
-        # --- Missing Time Series Features ---
-        "Lag_1": [feature_ref['Actual_Weekly_Sales'].mean()], # Added: Proxy for previous sales
-        "Lag_12": [feature_ref['Actual_Weekly_Sales'].mean()], # Added: Proxy for last year sales
-        "Rolling_Mean_3": [feature_ref['Actual_Weekly_Sales'].mean()] # Added: Proxy for trend
+        "Type": [1], # Placeholder for Store Type
+        "MarkDown1": [0], "MarkDown2": [0], "MarkDown3": [0], "MarkDown4": [0], "MarkDown5": [0],
+        "Lag_1": [feature_ref['Actual_Weekly_Sales'].mean()], 
+        "Lag_12": [feature_ref['Actual_Weekly_Sales'].mean()],
+        "Rolling_Mean_3": [feature_ref['Actual_Weekly_Sales'].mean()]
     })
-
+    
     # --- PREDICTIONS ---
     if st.button("Predict"):
         st.subheader("Prediction Results")
@@ -381,26 +371,25 @@ elif page == "Work Models":
                 # Replaces underscores with spaces for professional look (e.g., Month Feb)
                 return text.replace("_", " ")
 
-            # Optimized Filtering: We look for the Dept ID or the Month inside the rule
-            # Using regex=False to prevent the 'nothing to repeat' error
+            # 1. Filter the rules
+            # 2. Sort by 'lift' so the strongest rule is on top
+            # 3. Use .head(1) to get only the best result
             match = work_rules_df[
                 work_rules_df['antecedents'].astype(str).str.contains(f"Dept_{dept}", regex=False) | 
                 work_rules_df['antecedents'].astype(str).str.contains(f"Month_", regex=False)
-            ].head(5)
+            ].sort_values("lift", ascending=False).head(1)
 
             if not match.empty:
+                # The loop will now only run once
                 for i, row in match.iterrows():
                     ant = clean_text(str(row['antecedents']))
                     con = clean_text(str(row['consequents']))
                     
                     st.success(f"**IF** buying pattern involves **{ant}**, **THEN** customer likely buys **{con}**")
                     
-                    # Display metrics below the rule
                     col_a, col_b, col_c = st.columns(3)
                     col_a.caption(f"Lift: {row['lift']:.2f}")
                     col_b.caption(f"Confidence: {row['confidence']:.2%}")
                     col_c.caption(f"Support: {row['support']:.4f}")
             else:
-                st.info(f"No specific rules found for Dept {dept}. Try entering Dept 50, 37, or 99.")
-        else:
-            st.error("Association rules file not found.")
+                st.info(f"No specific rules found for Dept {dept}.")
