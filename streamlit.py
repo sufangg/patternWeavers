@@ -379,12 +379,12 @@ elif page == "Work Models":
                 for char in ["frozenset", "{", "}", "(", ")", "'"]:
                     text = text.replace(char, "")
                 return text
-
+                
             # Filter rules containing the selected department in the antecedent
             match = work_rules_df[
-                work_rules_df['antecedents'].astype(str).str.contains(f"{{{dept}}}") | 
-                work_rules_df['antecedents'].astype(str).str.contains(f" {dept},") |
-                work_rules_df['antecedents'].astype(str).str.contains(f" {dept}}}")
+                work_rules_df['antecedents'].astype(str).str.contains(f"{{{dept}}}", regex=False) | 
+                work_rules_df['antecedents'].astype(str).str.contains(f" {dept},", regex=False) |
+                work_rules_df['antecedents'].astype(str).str.contains(f" {dept}}}", regex=False)
             ].head(5)
 
             if not match.empty:
