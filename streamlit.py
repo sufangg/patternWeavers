@@ -292,7 +292,6 @@ elif page == "Work Models":
         )
     with col2:
         month = st.number_input("Month", 1, 12, 1)
-        day_of_week = st.number_input("Day of Week", 1, 7, 1)
         is_holiday = st.selectbox("Is Holiday?", [0, 1])
     with col3:
         temp = st.number_input(
@@ -310,7 +309,6 @@ elif page == "Work Models":
         "Store": [store],
         "Dept": [dept],
         "Month": [month],
-        "DayOfWeek": [day_of_week],
         "IsHoliday": [is_holiday],
         "Size": [size],
         "Temperature": [temp],
