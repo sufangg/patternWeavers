@@ -359,7 +359,7 @@ elif page == "Work Models":
             except Exception as e:
                 st.error(f"Time series prediction failed: {e}")
 
-        # Association Rules Section
+        # Association Rules 
         st.write("### Apriori (Association Rules)")
         
         try:
@@ -368,23 +368,25 @@ elif page == "Work Models":
             work_rules_df = pd.DataFrame()
 
         if not work_rules_df.empty:
-            # 1. Map numerical month to your CSV's naming convention
-            month_map = {
-                1:"Jan", 2:"Feb", 3:"Mar", 4:"Apr", 5:"May", 6:"Jun", 
-                7:"Jul", 8:"Aug", 9:"Sep", 10:"Oct", 11:"Nov", 12:"Dec"
-            }
-            selected_month_name = month_map.get(month, "")
+            # 1. Map Month number to CSV labels
+            month_map = {1:"Feb", 2:"Feb", 3:"Mar", 4:"Apr", 5:"May", 6:"Jun", 
+                         7:"Jul", 8:"Aug", 9:"Sep", 10:"Oct", 11:"Nov", 12:"Dec"}
+            selected_month = month_map.get(month, "")
 
-            # This function cleans 'Month_Feb' or 'Dept_51' into readable text
             def clean_text(text):
-                for char in ["frozenset", "{", "}", "'", "(", ")"]:
+                for char in ["frozenset", "{", "}", "'", "(", ")", '"']:
                     text = text.replace(char, "")
                 return text.replace("_", " ")
 
-            # 2. Updated Filter: Look for specific Dept OR the specific selected Month
+            # 2. THE FIX: Search Antecedents for the exact Dept OR Month
+            # We look for the ID inside the string to bypass frozenset issues
+            dept_search = f"Dept_{dept}"
+            month_search = f"Month_{selected_month}"
+
+            # Filter logic: Look for specific Dept OR Month inside the Antecedents column
             match = work_rules_df[
-                work_rules_df['antecedents'].astype(str).str.contains(f"'{selected_month_name}'", regex=False) | 
-                work_rules_df['antecedents'].astype(str).str.contains(f"'Dept_{dept}'", regex=False)
+                (work_rules_df['antecedents'].astype(str).str.contains(dept_search, case=False, na=False)) |
+                (work_rules_df['antecedents'].astype(str).str.contains(month_search, case=False, na=False))
             ].sort_values("lift", ascending=False).head(1)
 
             if not match.empty:
@@ -399,4 +401,6 @@ elif page == "Work Models":
                     col_b.caption(f"Confidence: {row['confidence']:.2%}")
                     col_c.caption(f"Support: {row['support']:.4f}")
             else:
-                st.info(f"No specific rules found for Dept {dept} or Month {selected_month_name}.")
+                st.info(f"No specific 'IF' rules found for {dept_search} or {month_search} in the database.")
+        else:
+            st.error("final_association_rules.csv not found.")
