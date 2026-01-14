@@ -247,7 +247,9 @@ elif page == "Association Rules":
 
 elif page == "Work Models":
     st.title("Work Models Dashboard")
-    st.markdown("Predict High/Low Sales, Weekly Sales, Monthly Forecast, and view Association Rules based on your input.")
+    st.markdown("""
+    Predict High/Low Sales, Weekly Sales, Monthly Forecast, and view Association Rules.
+    """)
 
     import ast
     # Load reference data for input ranges
@@ -279,43 +281,44 @@ elif page == "Work Models":
         rules_df = pd.DataFrame()
 
     # --- USER INPUT ---
-    col1, col2, col3 = st.columns(3)
+    col1, col2 = st.columns(2)
     with col1:
-        store = st.number_input(
-            "Store ID", int(feature_ref['Store'].min()), int(feature_ref['Store'].max()), int(feature_ref['Store'].min())
+        # Range-validated inputs based on actual data limits
+        store = st.slider(
+            "Store ID", 
+            int(feature_ref['Store'].min()), 
+            int(feature_ref['Store'].max()), 
+            int(feature_ref['Store'].min())
         )
-        dept = st.number_input(
-            "Department ID", int(feature_ref['Dept'].min()), int(feature_ref['Dept'].max()), int(feature_ref['Dept'].min())
+        dept = st.slider(
+            "Department ID", 
+            int(feature_ref['Dept'].min()), 
+            int(feature_ref['Dept'].max()), 
+            int(feature_ref['Dept'].min())
         )
-        size = st.number_input(
-            "Store Size", int(feature_ref['Size'].min()), int(feature_ref['Size'].max()), int(feature_ref['Size'].mean())
+        size = st.slider(
+            "Store Size", 
+            int(feature_ref['Size'].min()), 
+            int(feature_ref['Size'].max()), 
+            int(feature_ref['Size'].mean())
         )
     with col2:
-        month = st.number_input("Month", 1, 12, 1)
+        month = st.selectbox("Month", list(range(1, 13)), index=0)
         is_holiday = st.selectbox("Is Holiday?", [0, 1])
-    with col3:
-        temp = st.number_input(
-            "Temperature", float(feature_ref['Temperature'].min()), float(feature_ref['Temperature'].max()), float(feature_ref['Temperature'].mean())
-        )
-        fuel = st.number_input(
-            "Fuel Price", float(feature_ref['Fuel_Price'].min()), float(feature_ref['Fuel_Price'].max()), float(feature_ref['Fuel_Price'].mean())
-        )
-        unemp = st.number_input(
-            "Unemployment (%)", float(feature_ref['Unemployment'].min()), float(feature_ref['Unemployment'].max()), float(feature_ref['Unemployment'].mean())
-        )
-
-    # Prepare input DataFrame for models
+        
+    # --- SYSTEM CALCULATIONS (Background parameters) ---
+    # Prepare input DataFrame for models using system averages for non-user inputs
     input_df = pd.DataFrame({
         "Store": [store],
         "Dept": [dept],
         "Month": [month],
-        "Year": [2012],  # Use 2012 as a placeholder
+        "Year": [2012],  
         "IsHoliday": [is_holiday],
         "Size": [size],
-        "Temperature": [temp],
-        "Fuel_Price": [fuel],
+        "Temperature": [feature_ref['Temperature'].mean()], 
+        "Fuel_Price": [feature_ref['Fuel_Price'].mean()],
         "CPI": [feature_ref['CPI'].mean()],
-        "Unemployment": [unemp],
+        "Unemployment": [feature_ref['Unemployment'].mean()],
         "Type": [feature_ref['Type'].mode()[0]],
         "MarkDown1": [feature_ref['MarkDown1'].median()], 
         "MarkDown2": [feature_ref['MarkDown2'].median()],
@@ -355,38 +358,34 @@ elif page == "Work Models":
             try:
                 ts_pred = ts_model.predict(input_df)[0]
                 st.write("### Lasso (Time Series Forecast)")
-                st.success(f"RM {ts_pred:,.2f} monthly forecast")
+                # If prediction is negative due to model behavior, use a fallback logic or display 0
+                final_ts = ts_pred if ts_pred > 0 else 0
+                st.success(f"RM {final_ts:,.2f} monthly forecast")
             except Exception as e:
                 st.error(f"Time series prediction failed: {e}")
 
-        # Association Rules 
+        # Association Rules Section
         st.write("### Apriori (Association Rules)")
         
-        try:
-            work_rules_df = pd.read_csv("final_association_rules.csv") 
-        except:
-            work_rules_df = pd.DataFrame()
-
-        if not work_rules_df.empty:
-            # 1. Map Month number to CSV labels
-            month_map = {1:"Feb", 2:"Feb", 3:"Mar", 4:"Apr", 5:"May", 6:"Jun", 
-                         7:"Jul", 8:"Aug", 9:"Sep", 10:"Oct", 11:"Nov", 12:"Dec"}
-            selected_month = month_map.get(month, "")
+        if not rules_df.empty:
+            month_map = {
+                1:"Jan", 2:"Feb", 3:"Mar", 4:"Apr", 5:"May", 6:"Jun", 
+                7:"Jul", 8:"Aug", 9:"Sep", 10:"Oct", 11:"Nov", 12:"Dec"
+            }
+            selected_month_label = month_map.get(month, "")
 
             def clean_text(text):
                 for char in ["frozenset", "{", "}", "'", "(", ")", '"']:
                     text = text.replace(char, "")
                 return text.replace("_", " ")
 
-            # 2. THE FIX: Search Antecedents for the exact Dept OR Month
-            # We look for the ID inside the string to bypass frozenset issues
-            dept_search = f"Dept_{dept}"
-            month_search = f"Month_{selected_month}"
+            # EXACT FILTERING LOGIC
+            dept_pattern = f"'Dept_{dept}'"
+            month_pattern = f"'Month_{selected_month_label}'"
 
-            # Filter logic: Look for specific Dept OR Month inside the Antecedents column
-            match = work_rules_df[
-                (work_rules_df['antecedents'].astype(str).str.contains(dept_search, case=False, na=False)) |
-                (work_rules_df['antecedents'].astype(str).str.contains(month_search, case=False, na=False))
+            match = rules_df[
+                (rules_df['antecedents'].astype(str).str.contains(dept_pattern, regex=False)) | 
+                (rules_df['antecedents'].astype(str).str.contains(month_pattern, regex=False))
             ].sort_values("lift", ascending=False).head(1)
 
             if not match.empty:
@@ -401,6 +400,4 @@ elif page == "Work Models":
                     col_b.caption(f"Confidence: {row['confidence']:.2%}")
                     col_c.caption(f"Support: {row['support']:.4f}")
             else:
-                st.info(f"No specific 'IF' rules found for {dept_search} or {month_search} in the database.")
-        else:
-            st.error("final_association_rules.csv not found.")
+                st.info(f"No exact rules found for Dept {dept} or Month {selected_month_label}.")
