@@ -221,10 +221,10 @@ elif page == "Association Rules":
                           color='lift', title="Rule Strength Analysis")
     st.plotly_chart(fig_rule_bar, use_container_width=True)
     
-    
     st.subheader("Lift vs Confidence Analysis")
     fig_scatter = px.scatter(rules_df, x="confidence", y="lift", size="support", color="lift",
-                             hover_data=["antecedents", "consequents"])
+                             hover_data=["antecedents", "consequents"], trendline="ols")
+    )
     st.plotly_chart(fig_scatter, use_container_width=True)
 
     st.markdown("""
