@@ -302,25 +302,56 @@ elif page == "Work Models":
         st.subheader("Prediction Results")
 
         # ------ KPI Cards ------
+        # ------ KPI Cards with st.success style ------
         col_kpi1, col_kpi2, col_kpi3 = st.columns(3)
+
+        # Function to create a "success-style" KPI card
+        def kpi_card_success(value, label):
+            st.markdown(
+                f"""
+                <div style="
+                    background-color: #28a745;   /* green like st.success */
+                    color: white;
+                    border-radius: 10px;
+                    padding: 20px;
+                    text-align: center;
+                    box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+                ">
+                    <h2 style="margin:0;">{value}</h2>
+                    <p style="margin:0; font-size:14px;">{label}</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
         # Sales Level
-        col_kpi1, col_kpi2, col_kpi3 = st.columns(3)
         if clf_model:
             class_pred = clf_model.predict(input_df)[0]
-            kpi_class = "High Sales" if class_pred==1 else "Low Sales"
-            col_kpi1.metric("Sales Level", kpi_class)
-        else: col_kpi1.metric("Sales Level", "Model not loaded")
+            kpi_class = "High Sales" if class_pred == 1 else "Low Sales"
+            with col_kpi1:
+            kpi_card_success(kpi_class, "Sales Level")
+        else:
+            with col_kpi1:
+            kpi_card_success("Model not loaded", "Sales Level")
 
+        # Weekly Sales (RM)
         if reg_model:
             reg_pred = reg_model.predict(input_df)[0]
-            col_kpi2.metric("Weekly Sales (RM)", f"{reg_pred:,.2f}")
-        else: col_kpi2.metric("Weekly Sales (RM)", "Model not loaded")
+            with col_kpi2:
+            kpi_card_success(f"RM {reg_pred:,.2f}", "Weekly Sales (RM)")
+        else:
+            with col_kpi2:
+            kpi_card_success("Model not loaded", "Weekly Sales (RM)")
 
+        # Monthly Forecast (RM)
         if ts_model:
             ts_pred = abs(ts_model.predict(input_df)[0])
-            col_kpi3.metric("Monthly Forecast (RM)", f"{ts_pred:,.2f}")
-        else: col_kpi3.metric("Monthly Forecast (RM)", "Model not loaded")
+            with col_kpi3:
+            kpi_card_success(f"RM {ts_pred:,.2f}", "Monthly Forecast (RM)")
+        else:
+            with col_kpi3:
+            kpi_card_success("Model not loaded", "Monthly Forecast (RM)")
+
 
         # ------ Sales Trend (Time Series) ------
         st.markdown("### Sales Trend Forecast")
