@@ -68,7 +68,7 @@ def get_top_rules(df):
 # SIDEBAR & NAVIGATION
 # =====================
 st.sidebar.title("Walmart Retail Analytics")
-page = st.sidebar.radio("Navigate", ["Home", "Classification", "Regression", "Time Series", "Association Rules"])
+page = st.sidebar.radio("Navigate", ["Home", "Classification", "Regression", "Time Series", "Association Rules", "Work Models"])
 
 # =====================
 # PAGE CONTENT
@@ -242,3 +242,5 @@ elif page == "Association Rules":
     - Improve **seasonal marketing strategies** based on co-purchasing behavior  
     - Enhance **inventory planning** by stocking related products together
     """)
+
+elif page == "Work Models":
