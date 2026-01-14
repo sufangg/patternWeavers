@@ -4,6 +4,8 @@ import pandas as pd
 import joblib
 import plotly.express as px
 from sklearn.metrics import confusion_matrix
+from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
+from sklearn.linear_model import Lasso
 
 # =====================
 # PAGE CONFIG
@@ -247,14 +249,34 @@ elif page == "Work Models":
     st.title("Work Models Dashboard")
     st.markdown("Predict High/Low Sales, Weekly Sales, Monthly Forecast, and view Association Rules based on your input.")
 
+    import ast
     # Load reference data for input ranges
     feature_ref = pd.read_csv("sample_predictions.csv")
 
-    # Load models
-    clf_model = joblib.load("final_classification_model.pkl")  # Decision Tree
-    reg_model = joblib.load("final_regression_pipeline.pkl")   # Decision Tree Regressor
-    ts_model = joblib.load("final_time_series_model.pkl")      # Lasso
-    rules_df = pd.read_csv("top_association_rules.csv")        # Apriori rules
+    # Load models safely
+    try:
+        clf_model = joblib.load("final_classification_model.pkl")  # Decision Tree
+    except Exception as e:
+        st.error(f"Failed to load classification model: {e}")
+        clf_model = None
+
+    try:
+        reg_model = joblib.load("final_regression_pipeline.pkl")   # Decision Tree Regressor
+    except Exception as e:
+        st.error(f"Failed to load regression model: {e}")
+        reg_model = None
+
+    try:
+        ts_model = joblib.load("final_time_series_model.pkl")      # Lasso
+    except Exception as e:
+        st.error(f"Failed to load time series model: {e}")
+        ts_model = None
+
+    try:
+        rules_df = pd.read_csv("top_association_rules.csv")        # Apriori rules
+    except Exception as e:
+        st.error(f"Failed to load association rules: {e}")
+        rules_df = pd.DataFrame()
 
     # --- USER INPUT ---
     col1, col2, col3 = st.columns(3)
@@ -283,7 +305,7 @@ elif page == "Work Models":
             "Unemployment (%)", float(feature_ref['Unemployment'].min()), float(feature_ref['Unemployment'].max()), float(feature_ref['Unemployment'].mean())
         )
 
-    # Prepare input DataFrame
+    # Prepare input DataFrame for models
     input_df = pd.DataFrame({
         "Store": [store],
         "Dept": [dept],
@@ -301,43 +323,53 @@ elif page == "Work Models":
     if st.button("Predict"):
         st.subheader("Prediction Results")
 
-        col_model, col_result = st.columns(2)
+        # Classification
+        if clf_model is not None:
+            try:
+                class_pred = clf_model.predict(input_df)[0]
+                class_prob = clf_model.predict_proba(input_df)[0][class_pred]
+                st.write("### Decision Tree (Classification)")
+                st.info(f"{'High Sales' if class_pred==1 else 'Low Sales'} (Prob: {class_prob:.2f})")
+            except Exception as e:
+                st.error(f"Classification prediction failed: {e}")
 
-        # Classification (High/Low Sales)
-        class_pred = clf_model.predict(input_df)[0]
-        class_prob = clf_model.predict_proba(input_df)[0][class_pred]
-        with col_model:
-            st.write("Decision Tree (Classification)")
-        with col_result:
-            st.info(f"{'High Sales' if class_pred==1 else 'Low Sales'} (Prob: {class_prob:.2f})")
+        # Regression
+        if reg_model is not None:
+            try:
+                reg_pred = reg_model.predict(input_df)[0]
+                st.write("### Decision Tree Regressor (Regression)")
+                st.success(f"RM {reg_pred:,.2f} weekly sales")
+            except Exception as e:
+                st.error(f"Regression prediction failed: {e}")
 
-        # Regression (Exact Weekly Sales)
-        reg_pred = reg_model.predict(input_df)[0]
-        with col_model:
-            st.write("Decision Tree Regressor (Regression)")
-        with col_result:
-            st.success(f"RM {reg_pred:,.2f} weekly sales")
+        # Time Series Forecast
+        if ts_model is not None:
+            try:
+                ts_pred = ts_model.predict(input_df)[0]
+                st.write("### Lasso (Time Series Forecast)")
+                st.warning(f"RM {ts_pred:,.2f} monthly forecast")
+            except Exception as e:
+                st.error(f"Time series prediction failed: {e}")
 
-        # Time Series Forecast (Monthly)
-        ts_pred = ts_model.predict(input_df)[0]
-        with col_model:
-            st.write("Lasso (Time Series Forecast)")
-        with col_result:
-            st.warning(f"RM {ts_pred:,.2f} monthly forecast")
-
-        # Association Rules (Apriori)
-        top_rules = rules_df[
-            (rules_df['antecedents'].apply(lambda x: str(dept) in str(x))) |
-            (rules_df['consequents'].apply(lambda x: str(dept) in str(x)))
-        ].head(5)
-        with col_model:
-            st.write("Apriori (Association Rules)")
-        with col_result:
+        # Association Rules
+        st.write("### Apriori (Association Rules)")
+        if not rules_df.empty:
+            # Filter rules containing the selected department
+            top_rules = rules_df[
+                (rules_df['antecedents'].apply(lambda x: str(dept) in str(x))) |
+                (rules_df['consequents'].apply(lambda x: str(dept) in str(x)))
+            ].head(5)
             if not top_rules.empty:
                 for i, row in top_rules.iterrows():
-                    antecedent = ', '.join([str(j) for j in eval(row['antecedents'])])
-                    consequent = ', '.join([str(j) for j in eval(row['consequents'])])
-                    st.write(f"**IF** a customer buys from **Dept {antecedent}**, **THEN** they are likely to buy **Dept {consequent}**")
-                    st.caption(f"Lift: {row['lift']:.2f} | Confidence: {row['confidence']:.2%}")
+                    try:
+                        antecedent = ', '.join([str(j) for j in ast.literal_eval(row['antecedents'])])
+                        consequent = ', '.join([str(j) for j in ast.literal_eval(row['consequents'])])
+                        st.write(f"**IF** a customer buys from **Dept {antecedent}**, **THEN** they are likely to buy **Dept {consequent}**")
+                        st.caption(f"Lift: {row['lift']:.2f} | Confidence: {row['confidence']:.2%}")
+                    except:
+                        continue
             else:
-                st.info("No matching rules found.")
+                st.info("No matching rules found for this department.")
+        else:
+            st.info("Association rules not available.")
+
