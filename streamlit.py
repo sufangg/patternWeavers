@@ -359,14 +359,13 @@ elif page == "Work Models":
             except Exception as e:
                 st.error(f"Time series prediction failed: {e}")
 
-        # Association Rules Section
+        # Association Rules
         st.write("### Apriori (Association Rules)")
         
         if not rules_df.empty:
-            month_map = {
-                1:"Jan", 2:"Feb", 3:"Mar", 4:"Apr", 5:"May", 6:"Jun", 
-                7:"Jul", 8:"Aug", 9:"Sep", 10:"Oct", 11:"Nov", 12:"Dec"
-            }
+            # 1. Map Month
+            month_map = {1:"Jan", 2:"Feb", 3:"Mar", 4:"Apr", 5:"May", 6:"Jun", 
+                         7:"Jul", 8:"Aug", 9:"Sep", 10:"Oct", 11:"Nov", 12:"Dec"}
             selected_month_label = month_map.get(month, "")
 
             def clean_text(text):
@@ -374,12 +373,18 @@ elif page == "Work Models":
                     text = text.replace(char, "")
                 return text.replace("_", " ")
 
-            dept_pattern = f"'Dept_{dept}'"
-            month_pattern = f"'Month_{selected_month_label}'"
+            # 2. THE DUAL FILTER
+            # Pattern A: Exact match for Dept (e.g., 'Dept_1') 
+            dept_pattern = f"'Dept_{dept}'" 
+            # Pattern B: Match for Month (Standard string)
+            month_pattern = f"Month_{selected_month_label}"
 
+            # search both Antecedents AND Consequents to maximize chances of finding a rule
             match = rules_df[
                 (rules_df['antecedents'].astype(str).str.contains(dept_pattern, regex=False)) | 
-                (rules_df['antecedents'].astype(str).str.contains(month_pattern, regex=False))
+                (rules_df['antecedents'].astype(str).str.contains(month_pattern, regex=False)) |
+                (rules_df['consequents'].astype(str).str.contains(dept_pattern, regex=False)) |
+                (rules_df['consequents'].astype(str).str.contains(month_pattern, regex=False))
             ].sort_values("lift", ascending=False).head(1)
 
             if not match.empty:
@@ -392,4 +397,4 @@ elif page == "Work Models":
                     col_b.caption(f"Confidence: {row['confidence']:.2%}")
                     col_c.caption(f"Support: {row['support']:.4f}")
             else:
-                st.info(f"No exact rules found for Dept {dept} or Month {selected_month_label}.")
+                st.info(f"No rules found for Dept {dept} or Month {selected_month_label}.")
