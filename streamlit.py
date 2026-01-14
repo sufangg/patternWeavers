@@ -367,23 +367,35 @@ elif page == "Work Models":
 
         # Association Rules
         st.write("### Apriori (Association Rules)")
-        if not rules_df.empty:
-            # Filter rules containing the selected department
-            top_rules = rules_df[
-                (rules_df['antecedents'].apply(lambda x: str(dept) in str(x))) |
-                (rules_df['consequents'].apply(lambda x: str(dept) in str(x)))
-            ].head(5)
-            if not top_rules.empty:
-                for i, row in top_rules.iterrows():
-                    try:
-                        antecedent = ', '.join([str(j) for j in ast.literal_eval(row['antecedents'])])
-                        consequent = ', '.join([str(j) for j in ast.literal_eval(row['consequents'])])
-                        st.success(f"**IF** a customer buys from **Dept {antecedent}**, **THEN** they are likely to buy **Dept {consequent}**")
-                        st.caption(f"Lift: {row['lift']:.2f} | Confidence: {row['confidence']:.2%}")
-                    except:
-                        continue
-            else:
-                st.info("No matching rules found for this department.")
-        else:
-            st.info("Association rules not available.")
+        
+        try:
+            work_rules_df = pd.read_csv("final_association_rules.csv")
+        except:
+            work_rules_df = pd.DataFrame()
 
+        if not work_rules_df.empty:
+            # Helper function to clean 'frozenset({1})' into '1'
+            def clean_format(text):
+                for char in ["frozenset", "{", "}", "(", ")", "'"]:
+                    text = text.replace(char, "")
+                return text
+
+            # Filter rules containing the selected department in the antecedent
+            match = work_rules_df[
+                work_rules_df['antecedents'].astype(str).str.contains(f"{{{dept}}}") | 
+                work_rules_df['antecedents'].astype(str).str.contains(f" {dept},") |
+                work_rules_df['antecedents'].astype(str).str.contains(f" {dept}}}")
+            ].head(5)
+
+            if not match.empty:
+                for i, row in match.iterrows():
+                    # Use the cleaning function instead of ast.literal_eval
+                    ant = clean_format(str(row['antecedents']))
+                    con = clean_format(str(row['consequents']))
+                    
+                    st.success(f"**IF** a customer buys from **Dept {ant}**, **THEN** they are likely to buy **Dept {con}**")
+                    st.caption(f"Lift: {row['lift']:.2f} | Confidence: {row['confidence']:.2%}")
+            else:
+                st.info(f"No specific rules found for Department {dept}.")
+        else:
+            st.info("Association rules file not found.")
