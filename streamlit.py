@@ -244,3 +244,100 @@ elif page == "Association Rules":
     """)
 
 elif page == "Work Models":
+    st.title("Work Models Dashboard")
+    st.markdown("Predict High/Low Sales, Weekly Sales, Monthly Forecast, and view Association Rules based on your input.")
+
+    # Load reference data for input ranges
+    feature_ref = pd.read_csv("sample_predictions.csv")
+
+    # Load models
+    clf_model = joblib.load("final_classification_model.pkl")  # Decision Tree
+    reg_model = joblib.load("final_regression_pipeline.pkl")   # Decision Tree Regressor
+    ts_model = joblib.load("final_time_series_model.pkl")      # Lasso
+    rules_df = pd.read_csv("top_association_rules.csv")        # Apriori rules
+
+    # --- USER INPUT ---
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        store = st.number_input(
+            "Store ID", int(feature_ref['Store'].min()), int(feature_ref['Store'].max()), int(feature_ref['Store'].min())
+        )
+        dept = st.number_input(
+            "Department ID", int(feature_ref['Dept'].min()), int(feature_ref['Dept'].max()), int(feature_ref['Dept'].min())
+        )
+        size = st.number_input(
+            "Store Size", int(feature_ref['Size'].min()), int(feature_ref['Size'].max()), int(feature_ref['Size'].mean())
+        )
+    with col2:
+        month = st.number_input("Month", 1, 12, 1)
+        day_of_week = st.number_input("Day of Week", 1, 7, 1)
+        is_holiday = st.selectbox("Is Holiday?", [0, 1])
+    with col3:
+        temp = st.number_input(
+            "Temperature", float(feature_ref['Temperature'].min()), float(feature_ref['Temperature'].max()), float(feature_ref['Temperature'].mean())
+        )
+        fuel = st.number_input(
+            "Fuel Price", float(feature_ref['Fuel_Price'].min()), float(feature_ref['Fuel_Price'].max()), float(feature_ref['Fuel_Price'].mean())
+        )
+        unemp = st.number_input(
+            "Unemployment (%)", float(feature_ref['Unemployment'].min()), float(feature_ref['Unemployment'].max()), float(feature_ref['Unemployment'].mean())
+        )
+
+    # Prepare input DataFrame
+    input_df = pd.DataFrame({
+        "Store": [store],
+        "Dept": [dept],
+        "Month": [month],
+        "DayOfWeek": [day_of_week],
+        "IsHoliday": [is_holiday],
+        "Size": [size],
+        "Temperature": [temp],
+        "Fuel_Price": [fuel],
+        "CPI": [feature_ref['CPI'].mean()],
+        "Unemployment": [unemp]
+    })
+
+    # --- PREDICTIONS ---
+    if st.button("Predict"):
+        st.subheader("Prediction Results")
+
+        col_model, col_result = st.columns(2)
+
+        # Classification (High/Low Sales)
+        class_pred = clf_model.predict(input_df)[0]
+        class_prob = clf_model.predict_proba(input_df)[0][class_pred]
+        with col_model:
+            st.write("Decision Tree (Classification)")
+        with col_result:
+            st.info(f"{'High Sales' if class_pred==1 else 'Low Sales'} (Prob: {class_prob:.2f})")
+
+        # Regression (Exact Weekly Sales)
+        reg_pred = reg_model.predict(input_df)[0]
+        with col_model:
+            st.write("Decision Tree Regressor (Regression)")
+        with col_result:
+            st.success(f"RM {reg_pred:,.2f} weekly sales")
+
+        # Time Series Forecast (Monthly)
+        ts_pred = ts_model.predict(input_df)[0]
+        with col_model:
+            st.write("Lasso (Time Series Forecast)")
+        with col_result:
+            st.warning(f"RM {ts_pred:,.2f} monthly forecast")
+
+        # Association Rules (Apriori)
+        top_rules = rules_df[
+            (rules_df['antecedents'].apply(lambda x: str(dept) in str(x))) |
+            (rules_df['consequents'].apply(lambda x: str(dept) in str(x)))
+        ].head(5)
+        with col_model:
+            st.write("Apriori (Association Rules)")
+        with col_result:
+            if not top_rules.empty:
+                for i, row in top_rules.iterrows():
+                    antecedent = ', '.join([str(j) for j in eval(row['antecedents'])])
+                    consequent = ', '.join([str(j) for j in eval(row['consequents'])])
+                    st.write(f"**IF** a customer buys from **Dept {antecedent}**, **THEN** they are likely to buy **Dept {consequent}**")
+                    st.caption(f"Lift: {row['lift']:.2f} | Confidence: {row['confidence']:.2%}")
+            else:
+                st.info("No matching rules found.")
