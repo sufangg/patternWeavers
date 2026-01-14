@@ -302,55 +302,21 @@ elif page == "Work Models":
         st.subheader("Prediction Results")
 
         # ------ KPI Cards ------
-        # ------ KPI Cards with st.success style ------
-        col_kpi1, col_kpi2, col_kpi3 = st.columns(3)
+        ck1, ck2, ck3 = st.columns(3)
+        
+        def draw_kpi(val, lab):
+            st.markdown(f"""<div style="background-color:#28a745;color:white;padding:20px;border-radius:10px;text-align:center;">
+                        <div style="font-size:24px;font-weight:bold;">{val}</div><div>{lab}</div></div>""", unsafe_allow_html=True)
 
-        # Function to create a "success-style" KPI card
-        def kpi_card_success(value, label):
-            st.markdown(
-                f"""
-                <div style="
-                    background-color: #28a745;   /* green like st.success */
-                    color: white;
-                    border-radius: 10px;
-                    padding: 20px;
-                    text-align: center;
-                    box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
-                ">
-                    <h2 style="margin:0;">{value}</h2>
-                    <p style="margin:0; font-size:14px;">{label}</p>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-        # Sales Level
-        if clf_model:
-            class_pred = clf_model.predict(input_df)[0]
-            kpi_class = "High Sales" if class_pred == 1 else "Low Sales"
-            with col_kpi1:
-            kpi_card_success(kpi_class, "Sales Level")
-        else:
-            with col_kpi1:
-            kpi_card_success("Model not loaded", "Sales Level")
-
-        # Weekly Sales (RM)
-        if reg_model:
-            reg_pred = reg_model.predict(input_df)[0]
-            with col_kpi2:
-            kpi_card_success(f"RM {reg_pred:,.2f}", "Weekly Sales (RM)")
-        else:
-            with col_kpi2:
-            kpi_card_success("Model not loaded", "Weekly Sales (RM)")
-
-        # Monthly Forecast (RM)
-        if ts_model:
-            ts_pred = abs(ts_model.predict(input_df)[0])
-            with col_kpi3:
-            kpi_card_success(f"RM {ts_pred:,.2f}", "Monthly Forecast (RM)")
-        else:
-            with col_kpi3:
-            kpi_card_success("Model not loaded", "Monthly Forecast (RM)")
+        with ck1:
+            res = "High Sales" if (clf_model and clf_model.predict(input_df)[0] == 1) else "Low Sales"
+            draw_kpi(res, "Sales Level Prediction")
+        with ck2:
+            res = f"RM {reg_model.predict(input_df)[0]:,.2f}" if reg_model else "N/A"
+            draw_kpi(res, "Weekly Sales Estimate")
+        with ck3:
+            res = f"RM {abs(ts_model.predict(input_df)[0]):,.2f}" if ts_model else "N/A"
+            draw_kpi(res, "Monthly Forecast")
 
 
         # ------ Sales Trend (Time Series) ------
