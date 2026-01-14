@@ -368,23 +368,26 @@ elif page == "Work Models":
             work_rules_df = pd.DataFrame()
 
         if not work_rules_df.empty:
+            # 1. Map numerical month to your CSV's naming convention
+            month_map = {
+                1:"Jan", 2:"Feb", 3:"Mar", 4:"Apr", 5:"May", 6:"Jun", 
+                7:"Jul", 8:"Aug", 9:"Sep", 10:"Oct", 11:"Nov", 12:"Dec"
+            }
+            selected_month_name = month_map.get(month, "")
+
             # This function cleans 'Month_Feb' or 'Dept_51' into readable text
             def clean_text(text):
                 for char in ["frozenset", "{", "}", "'", "(", ")"]:
                     text = text.replace(char, "")
-                # Replaces underscores with spaces for professional look (e.g., Month Feb)
                 return text.replace("_", " ")
 
-            # 1. Filter the rules
-            # 2. Sort by 'lift' so the strongest rule is on top
-            # 3. Use .head(1) to get only the best result
+            # 2. Updated Filter: Look for specific Dept OR the specific selected Month
             match = work_rules_df[
                 work_rules_df['antecedents'].astype(str).str.contains(f"Dept_{dept}", regex=False) | 
-                work_rules_df['antecedents'].astype(str).str.contains(f"Month_", regex=False)
+                work_rules_df['antecedents'].astype(str).str.contains(f"Month_{selected_month_name}", regex=False)
             ].sort_values("lift", ascending=False).head(1)
 
             if not match.empty:
-                # The loop will now only run once
                 for i, row in match.iterrows():
                     ant = clean_text(str(row['antecedents']))
                     con = clean_text(str(row['consequents']))
@@ -396,4 +399,4 @@ elif page == "Work Models":
                     col_b.caption(f"Confidence: {row['confidence']:.2%}")
                     col_c.caption(f"Support: {row['support']:.4f}")
             else:
-                st.info(f"No specific rules found for Dept {dept}.")
+                st.info(f"No specific rules found for Dept {dept} or Month {selected_month_name}.")
