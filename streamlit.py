@@ -271,15 +271,14 @@ elif page == "Work Models":
     except: rules_df = pd.DataFrame()
 
     # ----------------- USER INPUT -----------------
-    with st.expander("Input Parameters"):
-        col1, col2 = st.columns(2)
-        with col1:
-            store = st.number_input(f"Store ID (Range: {s_min}-{s_max})", s_min, s_max, s_min)
-            dept = st.number_input(f"Department ID (Range: {d_min}-{d_max})", d_min, d_max, d_min)
-            size = st.number_input(f"Store Size (Range: {sz_min}-{sz_max})", sz_min, sz_max, int(feature_ref['Size'].mean()))
-        with col2:
-            month = st.selectbox("Month", list(range(1,13)), index=0)
-            is_holiday = st.selectbox("Is Holiday?", [0, 1])
+    col1, col2 = st.columns(2)
+    with col1:
+        store = st.number_input(f"Store ID (Range: {s_min}-{s_max})", s_min, s_max, s_min)
+        dept = st.number_input(f"Department ID (Range: {d_min}-{d_max})", d_min, d_max, d_min)
+        size = st.number_input(f"Store Size (Range: {sz_min}-{sz_max})", sz_min, sz_max, int(feature_ref['Size'].mean()))
+    with col2:
+        month = st.selectbox("Month", list(range(1,13)), index=0)
+        is_holiday = st.selectbox("Is Holiday?", [0, 1])
 
     # Prepare input dataframe
     input_df = pd.DataFrame({
