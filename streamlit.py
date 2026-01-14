@@ -273,7 +273,7 @@ elif page == "Work Models":
         ts_model = None
 
     try:
-        rules_df = pd.read_csv("top_association_rules.csv")        # Apriori rules
+        rules_df = pd.read_csv("final_association_rules.csv")        # Apriori rules
     except Exception as e:
         st.error(f"Failed to load association rules: {e}")
         rules_df = pd.DataFrame()
