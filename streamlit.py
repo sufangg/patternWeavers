@@ -383,8 +383,8 @@ elif page == "Work Models":
 
             # 2. Updated Filter: Look for specific Dept OR the specific selected Month
             match = work_rules_df[
-                work_rules_df['antecedents'].astype(str).str.contains(f"Dept_{dept}", regex=False) | 
-                work_rules_df['antecedents'].astype(str).str.contains(f"Month_{selected_month_name}", regex=False)
+                work_rules_df['antecedents'].astype(str).str.contains(f"'{selected_month_name}'", regex=False) | 
+                work_rules_df['antecedents'].astype(str).str.contains(f"'Dept_{dept}'", regex=False)
             ].sort_values("lift", ascending=False).head(1)
 
             if not match.empty:
