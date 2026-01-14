@@ -3,9 +3,11 @@ import streamlit as st
 import pandas as pd
 import joblib
 import plotly.express as px
+import plotly.graph_objects as go
 from sklearn.metrics import confusion_matrix
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 from sklearn.linear_model import Lasso
+import networkx as nx
 
 # =====================
 # PAGE CONFIG
@@ -250,12 +252,6 @@ elif page == "Work Models":
     st.markdown("""
     Predict High/Low Sales, Weekly Sales, Monthly Forecast, and view Association Rules.
     """)
-
-    import pandas as pd
-    import joblib
-    import plotly.express as px
-    import plotly.graph_objects as go
-    import networkx as nx
 
     # Load reference data
     feature_ref = pd.read_csv("sample_predictions.csv")
