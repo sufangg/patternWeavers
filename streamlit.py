@@ -302,30 +302,29 @@ elif page == "Work Models":
         st.subheader("Prediction Results")
 
         # ------ KPI Cards ------
-        # ------ KPI Cards ------
-col_kpi1, col_kpi2, col_kpi3 = st.columns(3)
+        col_kpi1, col_kpi2, col_kpi3 = st.columns(3)
 
-# Sales Level
-if clf_model:
-    class_pred = clf_model.predict(input_df)[0]
-    kpi_class = "High Sales" if class_pred == 1 else "Low Sales"
-    col_kpi1.success(kpi_class)
-else:
-    col_kpi1.success("Model not loaded")
+        # Sales Level
+        if clf_model:
+            class_pred = clf_model.predict(input_df)[0]
+            kpi_class = "High Sales" if class_pred == 1 else "Low Sales"
+            col_kpi1.success(kpi_class)
+        else:
+            col_kpi1.success("Model not loaded")
 
-# Weekly Sales (RM)
-if reg_model:
-    reg_pred = reg_model.predict(input_df)[0]
-    col_kpi2.success(f"RM {reg_pred:,.2f}")
-else:
-    col_kpi2.success("Model not loaded")
+        # Weekly Sales (RM)
+        if reg_model:
+            reg_pred = reg_model.predict(input_df)[0]
+            col_kpi2.success(f"RM {reg_pred:,.2f}")
+        else:
+            col_kpi2.success("Model not loaded")
 
-# Monthly Forecast (RM)
-if ts_model:
-    ts_pred = abs(ts_model.predict(input_df)[0])
-    col_kpi3.success(f"RM {ts_pred:,.2f}")
-else:
-    col_kpi3.success("Model not loaded")
+        # Monthly Forecast (RM)
+        if ts_model:
+            ts_pred = abs(ts_model.predict(input_df)[0])
+            col_kpi3.success(f"RM {ts_pred:,.2f}")
+        else:
+            col_kpi3.success("Model not loaded")
 
 
         # ------ Sales Trend (Time Series) ------
