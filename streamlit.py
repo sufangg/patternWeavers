@@ -316,8 +316,11 @@ elif page == "Work Models":
         "Fuel_Price": [fuel],
         "CPI": [feature_ref['CPI'].mean()],
         "Unemployment": [unemp],
-        "Type": [1], # Placeholder for Store Type
-        "MarkDown1": [0], "MarkDown2": [0], "MarkDown3": [0], "MarkDown4": [0], "MarkDown5": [0],
+        "MarkDown1": [feature_ref['MarkDown1'].median()], 
+        "MarkDown2": [feature_ref['MarkDown2'].median()],
+        "MarkDown3": [feature_ref['MarkDown3'].median()],
+        "MarkDown4": [feature_ref['MarkDown4'].median()],
+        "MarkDown5": [feature_ref['MarkDown5'].median()],
         "Lag_1": [feature_ref['Actual_Weekly_Sales'].mean()], 
         "Lag_12": [feature_ref['Actual_Weekly_Sales'].mean()],
         "Rolling_Mean_3": [feature_ref['Actual_Weekly_Sales'].mean()]
