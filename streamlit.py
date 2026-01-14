@@ -305,27 +305,22 @@ elif page == "Work Models":
         col_kpi1, col_kpi2, col_kpi3 = st.columns(3)
 
         # Sales Level
+        col_kpi1, col_kpi2, col_kpi3 = st.columns(3)
         if clf_model:
             class_pred = clf_model.predict(input_df)[0]
-            kpi_class = "High Sales" if class_pred == 1 else "Low Sales"
-            col_kpi1.success(kpi_class)
-        else:
-            col_kpi1.success("Model not loaded")
+            kpi_class = "High Sales" if class_pred==1 else "Low Sales"
+            col_kpi1.metric("Sales Level", kpi_class)
+        else: col_kpi1.metric("Sales Level", "Model not loaded")
 
-        # Weekly Sales (RM)
         if reg_model:
             reg_pred = reg_model.predict(input_df)[0]
-            col_kpi2.success(f"RM {reg_pred:,.2f}")
-        else:
-            col_kpi2.success("Model not loaded")
+            col_kpi2.metric("Weekly Sales (RM)", f"{reg_pred:,.2f}")
+        else: col_kpi2.metric("Weekly Sales (RM)", "Model not loaded")
 
-        # Monthly Forecast (RM)
         if ts_model:
             ts_pred = abs(ts_model.predict(input_df)[0])
-            col_kpi3.success(f"RM {ts_pred:,.2f}")
-        else:
-            col_kpi3.success("Model not loaded")
-
+            col_kpi3.metric("Monthly Forecast (RM)", f"{ts_pred:,.2f}")
+        else: col_kpi3.metric("Monthly Forecast (RM)", "Model not loaded")
 
         # ------ Sales Trend (Time Series) ------
         st.markdown("### Sales Trend Forecast")
