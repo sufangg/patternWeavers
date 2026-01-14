@@ -305,16 +305,32 @@ elif page == "Work Models":
         )
 
     # Prepare input DataFrame for models
+    # Prepare input DataFrame for models
+    # We add the "missing" columns using defaults from your data (feature_ref)
     input_df = pd.DataFrame({
         "Store": [store],
         "Dept": [dept],
         "Month": [month],
+        "Year": [2012],  # Added: Using 2012 as a standard reference year
         "IsHoliday": [is_holiday],
         "Size": [size],
         "Temperature": [temp],
         "Fuel_Price": [fuel],
         "CPI": [feature_ref['CPI'].mean()],
-        "Unemployment": [unemp]
+        "Unemployment": [unemp],
+        
+        # --- Missing Regression Features ---
+        "Type": [feature_ref['Type'].mode()[0]], # Added: Most common store type
+        "MarkDown1": [feature_ref['MarkDown1'].mean()], # Added
+        "MarkDown2": [feature_ref['MarkDown2'].mean()], # Added
+        "MarkDown3": [feature_ref['MarkDown3'].mean()], # Added
+        "MarkDown4": [feature_ref['MarkDown4'].mean()], # Added
+        "MarkDown5": [feature_ref['MarkDown5'].mean()], # Added
+        
+        # --- Missing Time Series Features ---
+        "Lag_1": [feature_ref['Actual_Weekly_Sales'].mean()], # Added: Proxy for previous sales
+        "Lag_12": [feature_ref['Actual_Weekly_Sales'].mean()], # Added: Proxy for last year sales
+        "Rolling_Mean_3": [feature_ref['Actual_Weekly_Sales'].mean()] # Added: Proxy for trend
     })
 
     # --- PREDICTIONS ---
@@ -327,7 +343,7 @@ elif page == "Work Models":
                 class_pred = clf_model.predict(input_df)[0]
                 class_prob = clf_model.predict_proba(input_df)[0][class_pred]
                 st.write("### Decision Tree (Classification)")
-                st.info(f"{'High Sales' if class_pred==1 else 'Low Sales'} (Prob: {class_prob:.2f})")
+                st.success(f"{'High Sales' if class_pred==1 else 'Low Sales'} (Prob: {class_prob:.2f})")
             except Exception as e:
                 st.error(f"Classification prediction failed: {e}")
 
@@ -345,7 +361,7 @@ elif page == "Work Models":
             try:
                 ts_pred = ts_model.predict(input_df)[0]
                 st.write("### Lasso (Time Series Forecast)")
-                st.warning(f"RM {ts_pred:,.2f} monthly forecast")
+                st.success(f"RM {ts_pred:,.2f} monthly forecast")
             except Exception as e:
                 st.error(f"Time series prediction failed: {e}")
 
@@ -362,7 +378,7 @@ elif page == "Work Models":
                     try:
                         antecedent = ', '.join([str(j) for j in ast.literal_eval(row['antecedents'])])
                         consequent = ', '.join([str(j) for j in ast.literal_eval(row['consequents'])])
-                        st.write(f"**IF** a customer buys from **Dept {antecedent}**, **THEN** they are likely to buy **Dept {consequent}**")
+                        st.success(f"**IF** a customer buys from **Dept {antecedent}**, **THEN** they are likely to buy **Dept {consequent}**")
                         st.caption(f"Lift: {row['lift']:.2f} | Confidence: {row['confidence']:.2%}")
                     except:
                         continue
