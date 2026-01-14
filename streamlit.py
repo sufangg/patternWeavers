@@ -251,151 +251,182 @@ elif page == "Work Models":
     Predict High/Low Sales, Weekly Sales, Monthly Forecast, and view Association Rules.
     """)
 
-    import ast
-    # Load reference data for input ranges
+    import pandas as pd
+    import joblib
+    import plotly.express as px
+    import plotly.graph_objects as go
+    import networkx as nx
+
+    # Load reference data
     feature_ref = pd.read_csv("sample_predictions.csv")
 
-    # Define ranges for labels
     s_min, s_max = int(feature_ref['Store'].min()), int(feature_ref['Store'].max())
     d_min, d_max = int(feature_ref['Dept'].min()), int(feature_ref['Dept'].max())
     sz_min, sz_max = int(feature_ref['Size'].min()), int(feature_ref['Size'].max())
 
-    # Load models safely
-    try:
-        clf_model = joblib.load("final_classification_model.pkl")
-    except Exception as e:
-        st.error(f"Failed to load classification model: {e}")
-        clf_model = None
+    # Load models
+    try: clf_model = joblib.load("final_classification_model.pkl")
+    except: clf_model = None
+    try: reg_model = joblib.load("final_regression_pipeline.pkl")
+    except: reg_model = None
+    try: ts_model = joblib.load("final_time_series_model.pkl")
+    except: ts_model = None
+    try: rules_df = pd.read_csv("final_association_rules.csv")
+    except: rules_df = pd.DataFrame()
 
-    try:
-        reg_model = joblib.load("final_regression_pipeline.pkl")
-    except Exception as e:
-        st.error(f"Failed to load regression model: {e}")
-        reg_model = None
+    # ----------------- USER INPUT -----------------
+    with st.expander("Input Parameters"):
+        col1, col2 = st.columns(2)
+        with col1:
+            store = st.number_input(f"Store ID (Range: {s_min}-{s_max})", s_min, s_max, s_min)
+            dept = st.number_input(f"Department ID (Range: {d_min}-{d_max})", d_min, d_max, d_min)
+            size = st.number_input(f"Store Size (Range: {sz_min}-{sz_max})", sz_min, sz_max, int(feature_ref['Size'].mean()))
+        with col2:
+            month = st.selectbox("Month", list(range(1,13)), index=0)
+            is_holiday = st.selectbox("Is Holiday?", [0, 1])
 
-    try:
-        ts_model = joblib.load("final_time_series_model.pkl")
-    except Exception as e:
-        st.error(f"Failed to load time series model: {e}")
-        ts_model = None
-
-    try:
-        rules_df = pd.read_csv("final_association_rules.csv")
-    except Exception as e:
-        st.error(f"Failed to load association rules: {e}")
-        rules_df = pd.DataFrame()
-
-    # --- USER INPUT---
-    col1, col2 = st.columns(2)
-    with col1:
-        store = st.number_input(
-            f"Store ID (Range: {s_min} - {s_max})", 
-            min_value=s_min, max_value=s_max, value=s_min
-        )
-        dept = st.number_input(
-            f"Department ID (Range: {d_min} - {d_max})", 
-            min_value=d_min, max_value=d_max, value=d_min
-        )
-        size = st.number_input(
-            f"Store Size (Range: {sz_min} - {sz_max})", 
-            min_value=sz_min, max_value=sz_max, value=int(feature_ref['Size'].mean())
-        )
-    with col2:
-        month = st.selectbox("Month", list(range(1, 13)), index=0)
-        is_holiday = st.selectbox("Is Holiday?", [0, 1])
-        
-    # --- SYSTEM CALCULATIONS (Background parameters) ---
+    # Prepare input dataframe
     input_df = pd.DataFrame({
-        "Store": [store],
-        "Dept": [dept],
-        "Month": [month],
-        "Year": [2012],  
-        "IsHoliday": [is_holiday],
-        "Size": [size],
-        "Temperature": [feature_ref['Temperature'].mean()], 
-        "Fuel_Price": [feature_ref['Fuel_Price'].mean()],
-        "CPI": [feature_ref['CPI'].mean()],
-        "Unemployment": [feature_ref['Unemployment'].mean()],
-        "Type": [feature_ref['Type'].mode()[0]],
-        "MarkDown1": [feature_ref['MarkDown1'].median()], 
-        "MarkDown2": [feature_ref['MarkDown2'].median()],
-        "MarkDown3": [feature_ref['MarkDown3'].median()],
-        "MarkDown4": [feature_ref['MarkDown4'].median()],
-        "MarkDown5": [feature_ref['MarkDown5'].median()],
-        "Lag_1": [feature_ref['Actual_Weekly_Sales'].mean()], 
-        "Lag_12": [feature_ref['Actual_Weekly_Sales'].mean()],
-        "Rolling_Mean_3": [feature_ref['Actual_Weekly_Sales'].mean()]
+        "Store":[store], "Dept":[dept], "Month":[month], "Year":[2012], "IsHoliday":[is_holiday], "Size":[size],
+        "Temperature":[feature_ref['Temperature'].mean()],
+        "Fuel_Price":[feature_ref['Fuel_Price'].mean()],
+        "CPI":[feature_ref['CPI'].mean()],
+        "Unemployment":[feature_ref['Unemployment'].mean()],
+        "Type":[feature_ref['Type'].mode()[0]],
+        "MarkDown1":[feature_ref['MarkDown1'].median()],
+        "MarkDown2":[feature_ref['MarkDown2'].median()],
+        "MarkDown3":[feature_ref['MarkDown3'].median()],
+        "MarkDown4":[feature_ref['MarkDown4'].median()],
+        "MarkDown5":[feature_ref['MarkDown5'].median()],
+        "Lag_1":[feature_ref['Actual_Weekly_Sales'].mean()],
+        "Lag_12":[feature_ref['Actual_Weekly_Sales'].mean()],
+        "Rolling_Mean_3":[feature_ref['Actual_Weekly_Sales'].mean()]
     })
-    
-    # --- PREDICTIONS ---
+
+    # ----------------- PREDICTION -----------------
     if st.button("Predict"):
         st.subheader("Prediction Results")
 
-        # Classification
-        if clf_model is not None:
-            try:
-                class_pred = clf_model.predict(input_df)[0]
-                st.write("### Decision Tree (Classification)")
-                st.success(f"{'High Sales' if class_pred==1 else 'Low Sales'}")
-            except Exception as e:
-                st.error(f"Classification prediction failed: {e}")
+        # ------ KPI Cards ------
+        col_kpi1, col_kpi2, col_kpi3 = st.columns(3)
+        if clf_model:
+            class_pred = clf_model.predict(input_df)[0]
+            kpi_class = "High Sales" if class_pred==1 else "Low Sales"
+            col_kpi1.metric("Sales Level", kpi_class)
+        else: col_kpi1.metric("Sales Level", "Model not loaded")
 
-        # Regression
-        if reg_model is not None:
-            try:
-                reg_pred = reg_model.predict(input_df)[0]
-                st.write("### Decision Tree Regressor (Regression)")
-                st.success(f"RM {reg_pred:,.2f} weekly sales")
-            except Exception as e:
-                st.error(f"Regression prediction failed: {e}")
+        if reg_model:
+            reg_pred = reg_model.predict(input_df)[0]
+            col_kpi2.metric("Weekly Sales (RM)", f"{reg_pred:,.2f}")
+        else: col_kpi2.metric("Weekly Sales (RM)", "Model not loaded")
 
-        # Time Series Forecast
-        if ts_model is not None:
-            try:
-                ts_pred = ts_model.predict(input_df)[0]
-                st.write("### Lasso (Time Series Forecast)")
-                # THE FIX: abs() removes the negative sign if it exists
-                clean_ts_pred = abs(ts_pred)
-                st.success(f"RM {clean_ts_pred:,.2f} monthly forecast")
-            except Exception as e:
-                st.error(f"Time series prediction failed: {e}")
+        if ts_model:
+            ts_pred = abs(ts_model.predict(input_df)[0])
+            col_kpi3.metric("Monthly Forecast (RM)", f"{ts_pred:,.2f}")
+        else: col_kpi3.metric("Monthly Forecast (RM)", "Model not loaded")
 
-        # Association Rules
-        st.write("### Apriori (Association Rules)")
-        
+        # ------ Sales Trend (Time Series) ------
+        st.markdown("### Sales Trend Forecast")
+        if ts_model:
+            future_months = list(range(month, month+4))
+            future_sales = [abs(ts_model.predict(input_df)[0]) * (1+0.05*i) for i in range(4)]  # sample trend
+            fig_ts = go.Figure()
+            fig_ts.add_trace(go.Scatter(x=future_months, y=future_sales, mode="lines+markers", name="Forecast"))
+            fig_ts.update_layout(xaxis_title="Month", yaxis_title="Sales (RM)")
+            st.plotly_chart(fig_ts)
+
+        # ------ Regression Insights ------
+        st.markdown("### Regression Insights")
+        if reg_model:
+            dept_sales = feature_ref.groupby('Dept')['Actual_Weekly_Sales'].mean().reset_index()
+            fig_bar = px.bar(dept_sales, x='Dept', y='Actual_Weekly_Sales', title="Average Weekly Sales by Dept")
+            st.plotly_chart(fig_bar)
+
+            fig_scatter = px.scatter(feature_ref, x='Size', y='Actual_Weekly_Sales', trendline="ols", title="Store Size vs Weekly Sales")
+            st.plotly_chart(fig_scatter)
+
+        # ------ Association Rules with Network Graph ------
+        st.markdown("### Association Rules")
         if not rules_df.empty:
-            # 1. Map Month
-            month_map = {1:"Jan", 2:"Feb", 3:"Mar", 4:"Apr", 5:"May", 6:"Jun", 
-                         7:"Jul", 8:"Aug", 9:"Sep", 10:"Oct", 11:"Nov", 12:"Dec"}
-            selected_month_label = month_map.get(month, "")
+            month_map = {1:"Jan",2:"Feb",3:"Mar",4:"Apr",5:"May",6:"Jun",
+                         7:"Jul",8:"Aug",9:"Sep",10:"Oct",11:"Nov",12:"Dec"}
+            month_label = month_map.get(month, "")
 
             def clean_text(text):
-                for char in ["frozenset", "{", "}", "'", "(", ")", '"']:
-                    text = text.replace(char, "")
-                return text.replace("_", " ")
+                for char in ["frozenset","{","}","'","(",")","\""]:
+                    text = text.replace(char,"")
+                return text.replace("_"," ")
 
-            # 2. THE DUAL FILTER
-            # Pattern A: Exact match for Dept (e.g., 'Dept_1') 
-            dept_pattern = f"'Dept_{dept}'" 
-            # Pattern B: Match for Month (Standard string)
-            month_pattern = f"Month_{selected_month_label}"
-
-            # search both Antecedents AND Consequents to maximize chances of finding a rule
             match = rules_df[
-                (rules_df['antecedents'].astype(str).str.contains(dept_pattern, regex=False)) | 
-                (rules_df['antecedents'].astype(str).str.contains(month_pattern, regex=False)) |
-                (rules_df['consequents'].astype(str).str.contains(dept_pattern, regex=False)) |
-                (rules_df['consequents'].astype(str).str.contains(month_pattern, regex=False))
-            ].sort_values("lift", ascending=False).head(1)
+                (rules_df['antecedents'].astype(str).str.contains(f"'Dept_{dept}'")) |
+                (rules_df['antecedents'].astype(str).str.contains(f"Month_{month_label}")) |
+                (rules_df['consequents'].astype(str).str.contains(f"'Dept_{dept}'")) |
+                (rules_df['consequents'].astype(str).str.contains(f"Month_{month_label}"))
+            ].sort_values("lift", ascending=False).head(5)
 
             if not match.empty:
-                for i, row in match.iterrows():
+                st.write("#### Top 5 Rules")
+                for i,row in match.iterrows():
                     ant = clean_text(str(row['antecedents']))
                     con = clean_text(str(row['consequents']))
-                    st.success(f"**IF** buying pattern involves **{ant}**, **THEN** customer likely buys **{con}**")
+                    st.success(f"IF buying pattern involves **{ant}**, THEN customer likely buys **{con}**")
                     col_a, col_b, col_c = st.columns(3)
                     col_a.caption(f"Lift: {row['lift']:.2f}")
                     col_b.caption(f"Confidence: {row['confidence']:.2%}")
                     col_c.caption(f"Support: {row['support']:.4f}")
+
+                # -------- Network Graph --------
+                G = nx.Graph()
+                for i,row in match.iterrows():
+                    ant = clean_text(str(row['antecedents'])).split(", ")
+                    con = clean_text(str(row['consequents'])).split(", ")
+                    for a in ant:
+                        for c in con:
+                            G.add_edge(a, c, weight=row['lift'])
+
+                pos = nx.spring_layout(G, seed=42)
+                edge_x, edge_y = [], []
+                for edge in G.edges():
+                    x0, y0 = pos[edge[0]]
+                    x1, y1 = pos[edge[1]]
+                    edge_x.extend([x0, x1, None])
+                    edge_y.extend([y0, y1, None])
+
+                edge_trace = go.Scatter(
+                    x=edge_x, y=edge_y,
+                    line=dict(width=1, color='#888'),
+                    hoverinfo='none',
+                    mode='lines'
+                )
+
+                node_x, node_y, node_text = [], [], []
+                for node in G.nodes():
+                    x, y = pos[node]
+                    node_x.append(x)
+                    node_y.append(y)
+                    node_text.append(node)
+
+                node_trace = go.Scatter(
+                    x=node_x, y=node_y,
+                    mode='markers+text',
+                    text=node_text,
+                    textposition="top center",
+                    hoverinfo='text',
+                    marker=dict(size=20, color='lightblue', line=dict(width=2, color='DarkSlateGrey'))
+                )
+
+                fig = go.Figure(data=[edge_trace, node_trace],
+                                layout=go.Layout(
+                                    title="Association Rules Network Graph",
+                                    title_x=0.5,
+                                    showlegend=False,
+                                    hovermode='closest',
+                                    margin=dict(b=20,l=5,r=5,t=40),
+                                    xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+                                    yaxis=dict(showgrid=False, zeroline=False, showticklabels=False)
+                                ))
+                st.plotly_chart(fig, use_container_width=True)
             else:
-                st.info(f"No rules found for Dept {dept} or Month {selected_month_label}.")
+                st.info(f"No rules found for Dept {dept} or Month {month_label}.")
+        else:
+            st.info("Association rules not loaded.")
