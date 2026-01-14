@@ -365,37 +365,42 @@ elif page == "Work Models":
             except Exception as e:
                 st.error(f"Time series prediction failed: {e}")
 
-        # Association Rules
+        # Association Rules Section
         st.write("### Apriori (Association Rules)")
         
         try:
-            work_rules_df = pd.read_csv("final_association_rules.csv")
+            work_rules_df = pd.read_csv("final_association_rules.csv") 
         except:
             work_rules_df = pd.DataFrame()
 
         if not work_rules_df.empty:
-            # Helper function to clean 'frozenset({1})' into '1'
-            def clean_format(text):
-                for char in ["frozenset", "{", "}", "(", ")", "'"]:
+            # This function cleans 'Month_Feb' or 'Dept_51' into readable text
+            def clean_text(text):
+                for char in ["frozenset", "{", "}", "'", "(", ")"]:
                     text = text.replace(char, "")
-                return text
-                
-            # Filter rules containing the selected department in the antecedent
+                # Replaces underscores with spaces for professional look (e.g., Month Feb)
+                return text.replace("_", " ")
+
+            # Optimized Filtering: We look for the Dept ID or the Month inside the rule
+            # Using regex=False to prevent the 'nothing to repeat' error
             match = work_rules_df[
-                work_rules_df['antecedents'].astype(str).str.contains(f"{{{dept}}}", regex=False) | 
-                work_rules_df['antecedents'].astype(str).str.contains(f" {dept},", regex=False) |
-                work_rules_df['antecedents'].astype(str).str.contains(f" {dept}}}", regex=False)
+                work_rules_df['antecedents'].astype(str).str.contains(f"Dept_{dept}", regex=False) | 
+                work_rules_df['antecedents'].astype(str).str.contains(f"Month_", regex=False)
             ].head(5)
 
             if not match.empty:
                 for i, row in match.iterrows():
-                    # Use the cleaning function instead of ast.literal_eval
-                    ant = clean_format(str(row['antecedents']))
-                    con = clean_format(str(row['consequents']))
+                    ant = clean_text(str(row['antecedents']))
+                    con = clean_text(str(row['consequents']))
                     
-                    st.success(f"**IF** a customer buys from **Dept {ant}**, **THEN** they are likely to buy **Dept {con}**")
-                    st.caption(f"Lift: {row['lift']:.2f} | Confidence: {row['confidence']:.2%}")
+                    st.success(f"**IF** buying pattern involves **{ant}**, **THEN** customer likely buys **{con}**")
+                    
+                    # Display metrics below the rule
+                    col_a, col_b, col_c = st.columns(3)
+                    col_a.caption(f"Lift: {row['lift']:.2f}")
+                    col_b.caption(f"Confidence: {row['confidence']:.2%}")
+                    col_c.caption(f"Support: {row['support']:.4f}")
             else:
-                st.info(f"No specific rules found for Department {dept}.")
+                st.info(f"No specific rules found for Dept {dept}. Try entering Dept 50, 37, or 99.")
         else:
-            st.info("Association rules file not found.")
+            st.error("Association rules file not found.")
