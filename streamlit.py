@@ -255,59 +255,56 @@ elif page == "Work Models":
     # Load reference data for input ranges
     feature_ref = pd.read_csv("sample_predictions.csv")
 
+    # Define ranges for labels
+    s_min, s_max = int(feature_ref['Store'].min()), int(feature_ref['Store'].max())
+    d_min, d_max = int(feature_ref['Dept'].min()), int(feature_ref['Dept'].max())
+    sz_min, sz_max = int(feature_ref['Size'].min()), int(feature_ref['Size'].max())
+
     # Load models safely
     try:
-        clf_model = joblib.load("final_classification_model.pkl")  # Decision Tree
+        clf_model = joblib.load("final_classification_model.pkl")
     except Exception as e:
         st.error(f"Failed to load classification model: {e}")
         clf_model = None
 
     try:
-        reg_model = joblib.load("final_regression_pipeline.pkl")   # Decision Tree Regressor
+        reg_model = joblib.load("final_regression_pipeline.pkl")
     except Exception as e:
         st.error(f"Failed to load regression model: {e}")
         reg_model = None
 
     try:
-        ts_model = joblib.load("final_time_series_model.pkl")      # Lasso
+        ts_model = joblib.load("final_time_series_model.pkl")
     except Exception as e:
         st.error(f"Failed to load time series model: {e}")
         ts_model = None
 
     try:
-        rules_df = pd.read_csv("final_association_rules.csv")        # Apriori rules
+        rules_df = pd.read_csv("final_association_rules.csv")
     except Exception as e:
         st.error(f"Failed to load association rules: {e}")
         rules_df = pd.DataFrame()
 
-    # --- USER INPUT ---
+    # --- USER INPUT---
     col1, col2 = st.columns(2)
     with col1:
-        # Range-validated inputs based on actual data limits
-        store = st.slider(
-            "Store ID", 
-            int(feature_ref['Store'].min()), 
-            int(feature_ref['Store'].max()), 
-            int(feature_ref['Store'].min())
+        store = st.number_input(
+            f"Store ID (Range: {s_min} - {s_max})", 
+            min_value=s_min, max_value=s_max, value=s_min
         )
-        dept = st.slider(
-            "Department ID", 
-            int(feature_ref['Dept'].min()), 
-            int(feature_ref['Dept'].max()), 
-            int(feature_ref['Dept'].min())
+        dept = st.number_input(
+            f"Department ID (Range: {d_min} - {d_max})", 
+            min_value=d_min, max_value=d_max, value=d_min
         )
-        size = st.slider(
-            "Store Size", 
-            int(feature_ref['Size'].min()), 
-            int(feature_ref['Size'].max()), 
-            int(feature_ref['Size'].mean())
+        size = st.number_input(
+            f"Store Size (Range: {sz_min} - {sz_max})", 
+            min_value=sz_min, max_value=sz_max, value=int(feature_ref['Size'].mean())
         )
     with col2:
         month = st.selectbox("Month", list(range(1, 13)), index=0)
         is_holiday = st.selectbox("Is Holiday?", [0, 1])
         
     # --- SYSTEM CALCULATIONS (Background parameters) ---
-    # Prepare input DataFrame for models using system averages for non-user inputs
     input_df = pd.DataFrame({
         "Store": [store],
         "Dept": [dept],
@@ -338,9 +335,8 @@ elif page == "Work Models":
         if clf_model is not None:
             try:
                 class_pred = clf_model.predict(input_df)[0]
-                class_prob = clf_model.predict_proba(input_df)[0][class_pred]
                 st.write("### Decision Tree (Classification)")
-                st.success(f"{'High Sales' if class_pred==1 else 'Low Sales'} (Prob: {class_prob:.2f})")
+                st.success(f"{'High Sales' if class_pred==1 else 'Low Sales'}")
             except Exception as e:
                 st.error(f"Classification prediction failed: {e}")
 
@@ -358,7 +354,6 @@ elif page == "Work Models":
             try:
                 ts_pred = ts_model.predict(input_df)[0]
                 st.write("### Lasso (Time Series Forecast)")
-                # If prediction is negative due to model behavior, use a fallback logic or display 0
                 final_ts = ts_pred if ts_pred > 0 else 0
                 st.success(f"RM {final_ts:,.2f} monthly forecast")
             except Exception as e:
@@ -379,7 +374,6 @@ elif page == "Work Models":
                     text = text.replace(char, "")
                 return text.replace("_", " ")
 
-            # EXACT FILTERING LOGIC
             dept_pattern = f"'Dept_{dept}'"
             month_pattern = f"'Month_{selected_month_label}'"
 
@@ -392,9 +386,7 @@ elif page == "Work Models":
                 for i, row in match.iterrows():
                     ant = clean_text(str(row['antecedents']))
                     con = clean_text(str(row['consequents']))
-                    
                     st.success(f"**IF** buying pattern involves **{ant}**, **THEN** customer likely buys **{con}**")
-                    
                     col_a, col_b, col_c = st.columns(3)
                     col_a.caption(f"Lift: {row['lift']:.2f}")
                     col_b.caption(f"Confidence: {row['confidence']:.2%}")
