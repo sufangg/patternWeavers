@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# link streamlit: https://patternweavers.streamlit.app/
 import streamlit as st
 import pandas as pd
 import joblib
